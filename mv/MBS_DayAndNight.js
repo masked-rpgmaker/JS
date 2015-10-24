@@ -3,9 +3,9 @@
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
-//=============================================================================
+//-----------------------------------------------------------------------------
 // Especificações do plugin (Não modifique!)
-//=============================================================================
+//
 /*:
 
   @author Masked
@@ -119,9 +119,8 @@ MBS.DayAndNight = {};
     return tone;
   }
 
-  //===========================================================================
-  // ** Configuração
-  //===========================================================================
+  //---------------------------------------------------------------------------
+  // Configuração
 
   // Tempo
   $.Param.realTime = $.Parameters["RealTime"].toLowerCase() === "true";
@@ -139,9 +138,10 @@ MBS.DayAndNight = {};
   $.Param.sunset = toneFromStr($.Parameters["Sunset"]);
   $.Param.night = toneFromStr($.Parameters["Night"]);
 
-  //===========================================================================
-  // ** TimeManager
-  //===========================================================================
+  //---------------------------------------------------------------------------
+  // TimeManager
+  //
+  // Classe de controle do tempo do jogo
 
   function TimeManager() {
     throw new Error('This is a static class');
@@ -150,6 +150,7 @@ MBS.DayAndNight = {};
   /**
   * Obtenção das horas no jogo
   *
+  * @method getHour
   * @return {Integer} Retorna a hora do jogo de 0-23
   */
   TimeManager.getHour = function() {
@@ -163,6 +164,7 @@ MBS.DayAndNight = {};
   /**
   * Obtenção dos minutos no jogo
   *
+  * @method getMinute
   * @return {Integer} Retorna o minuto da hora do jogo de 0-59
   */
   TimeManager.getMinute = function() {
@@ -176,6 +178,7 @@ MBS.DayAndNight = {};
   /**
   * Obtenção dos segundos no jogo
   *
+  * @method getSecond
   * @return {Integer} Retorna o minuto da hora do jogo de 0-59
   */
   TimeManager.getSecond = function() {
@@ -189,6 +192,7 @@ MBS.DayAndNight = {};
   /**
   * Obtenção da data
   *
+  * @method getDate
   * @return {Integer} Retorna a data atual
   */
   TimeManager.getDate = function() {
@@ -198,9 +202,10 @@ MBS.DayAndNight = {};
   // Definição para uso externo quando necessário
   MBS.DayAndNight.TimeManager = TimeManager;
 
-  //===========================================================================
-  // ** Scene_Map
-  //===========================================================================
+  //---------------------------------------------------------------------------
+  // Scene_Map
+  //
+  // Cena do mapa
 
   // Alias
   var _Scene_Map_update = Scene_Map.prototype.update;
@@ -212,6 +217,7 @@ MBS.DayAndNight = {};
   /**
   * Atualização do processo
   *
+  * @method update
   * @this {Scene_Map}
   */
   Scene_Map.prototype.update = function() {
@@ -222,6 +228,7 @@ MBS.DayAndNight = {};
   /**
   * Atualização da tonalidade da tela de acordo com a hora do jogo
   *
+  * @method updateHourToneChange
   * @this {Scene_Map}
   */
   Scene_Map.prototype.updateHourToneChange = function() {
@@ -236,6 +243,7 @@ MBS.DayAndNight = {};
   /**
   * Evento executado ao carregar o mapa
   *
+  * @method onMapLoaded
   * @this {Scene_Map}
   */
   Scene_Map.prototype.onMapLoaded = function () {
@@ -270,6 +278,7 @@ MBS.DayAndNight = {};
   /**
   * Aquisição do tom para a hora atual
   *
+  * @method getToneForTime
   * @this {Scene_Map}
   */
   Scene_Map.prototype.getToneForTime = function(hour) {
@@ -299,6 +308,7 @@ MBS.DayAndNight = {};
   /**
   * Aquisição do período do dia
   *
+  * @method period
   * @this {Scene_Map}
   */
   Object.defineProperty($, "period", {
