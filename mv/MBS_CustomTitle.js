@@ -3,9 +3,9 @@
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
-//=============================================================================
+//-----------------------------------------------------------------------------
 // Especificações do plugin (Não modifique!)
-//=============================================================================
+//
 /*:
 
   @author Masked
@@ -29,7 +29,7 @@
   Créditos
   =============================================================================
   - Masked, por criar
-  
+
   @param Logo
   @desc Caminhos para as imagens de logo separados por ';'
   @default img/system/Logo.png
@@ -93,9 +93,9 @@ MBS.CustomTitle = {};
 (function($) {
   $.Parameters = PluginManager.parameters("MBS_CustomTitle");
   $.Param = $.Param || {};
-  //===========================================================================
-  // ** Configuração
-  //===========================================================================
+  
+  //---------------------------------------------------------------------------
+  // Configuração
 
   // Logo
   $.Param.splash = $.Parameters["Logo"].split(';');
@@ -120,9 +120,17 @@ MBS.CustomTitle = {};
   // Outros
   $.Param.translucentAlpha = Number($.Parameters["Translucent"] || 96);
 
-  //===========================================================================
-  // ** Scene_Boot
-  //===========================================================================
+  //-----------------------------------------------------------------------------
+  // Scene_Boot
+  //
+  // Cena de inicialização do jogo
+
+  /**
+    Inicialização do processo
+
+    @method start
+    @this {Scene_Boot}
+  */
   Scene_Boot.prototype.start = function () {
       Scene_Base.prototype.start.call(this);
       SoundManager.preloadImportantSounds();
@@ -140,9 +148,10 @@ MBS.CustomTitle = {};
       this.updateDocumentTitle()
   };
 
-  //===========================================================================
-  // ** Scene_Splash
-  //===========================================================================
+  //-----------------------------------------------------------------------------
+  // Scene_Splash
+  //
+  // Cena das imagens de logo
 
   /**
    * @constructor
@@ -156,6 +165,7 @@ MBS.CustomTitle = {};
   /**
    * Início da cena
    *
+   * @method initialize
    * @this {Scene_Splash}
    */
   Scene_Splash.prototype.initialize = function () {
@@ -168,6 +178,7 @@ MBS.CustomTitle = {};
   /**
    * Criação da cena
    *
+   * @method create
    * @this {Scene_Splash}
    */
   Scene_Splash.prototype.create = function() {
@@ -176,6 +187,12 @@ MBS.CustomTitle = {};
     this.addChild(this._splashSprite);
   };
 
+  /**
+   * Criação das imagens
+   *
+   * @method createSplash
+   * @this {Scene_Splash}
+   */
   Scene_Splash.prototype.createSplash = function() {
     this._splashSprite = new Sprite(null);
     this._splashSprite.anchor.x = 0.5;
@@ -187,6 +204,7 @@ MBS.CustomTitle = {};
   /**
    * Atualização da cena
    *
+   * @method update
    * @this {Scene_Splash}
    */
   Scene_Splash.prototype.update = function() {
@@ -214,6 +232,7 @@ MBS.CustomTitle = {};
   /**
    * Desenho do splash
    *
+   * @method drawSplash
    * @this {Scene_Splash}
    * @param {Number} index Índice da imagem de splash a ser desenhada
    */
@@ -223,13 +242,15 @@ MBS.CustomTitle = {};
     this._splashSprite.opacity = 0;
   };
 
-  //===========================================================================
-  // ** Scene_Title
-  //===========================================================================
+  //-----------------------------------------------------------------------------
+  // Scene_Title
+  //
+  // Cena da cena de título
 
   /**
    * Criação da cena
    *
+   * @method create
    * @this {Scene_Title}
    */
   Scene_Title.prototype.create = function() {
@@ -249,6 +270,7 @@ MBS.CustomTitle = {};
   /**
    * Criação do cursor de opção
    *
+   * @method createCursor
    * @this {Scene_Title}
    */
   Scene_Title.prototype.createCursor = function() {
@@ -259,6 +281,7 @@ MBS.CustomTitle = {};
   /**
    * Atualização do cursor de opção
    *
+   * @method updateCursor
    * @this {Scene_Title}
    */
  Scene_Title.prototype.updateCursor = function() {
@@ -276,6 +299,7 @@ MBS.CustomTitle = {};
  /**
   * Obtenção de um botão pelo índice dele
   *
+  * @method getButton
   * @this {Scene_Title}
   * @param {Number} index Índice do botão
   * @return {Sprite} Retorna o botão de índice 'index'
@@ -294,6 +318,7 @@ MBS.CustomTitle = {};
   /**
    * Criação dos botões do título
    *
+   * @method createButtons
    * @this {Scene_Title}
    */
   Scene_Title.prototype.createButtons = function() {
@@ -345,6 +370,7 @@ MBS.CustomTitle = {};
   /**
    * Atualização da cena
    *
+   * @method update
    * @this {Scene_Title}
    */
   Scene_Title.prototype.update = function() {
@@ -358,6 +384,7 @@ MBS.CustomTitle = {};
   /**
    * Atualização dos botões
    *
+   * @method updateButtons
    * @this {Scene_Title}
    */
    Scene_Title.prototype.updateButtons = function() {
@@ -371,6 +398,7 @@ MBS.CustomTitle = {};
   /**
    * Atualização do índice selecionado
    *
+   * @method updateIndex
    * @this {Scene_Title}
    */
   Scene_Title.prototype.updateIndex = function() {
@@ -397,6 +425,7 @@ MBS.CustomTitle = {};
   /**
    * Verificação de se uma coordenada está sobre um botão
    *
+   * @method isOverButton
    * @this {Scene_Title}
    * @param {Number} index O índice do botão a ser verificado
    * @param {Number} x A posição X a ser verificada
@@ -410,6 +439,7 @@ MBS.CustomTitle = {};
   /**
    * Atualização do índice selecionado
    *
+   * @method updateTrigger
    * @this {Scene_Title}
    */
   Scene_Title.prototype.updateTrigger = function() {
@@ -435,6 +465,7 @@ MBS.CustomTitle = {};
   /**
    * Novo Jogo
    *
+   * @method commandNewGame
    * @this {Scene_Title}
    */
   Scene_Title.prototype.commandNewGame = function () {
@@ -446,6 +477,7 @@ MBS.CustomTitle = {};
   /**
    * Continuar
    *
+   * @method commandContinue
    * @this {Scene_Title}
    */
   Scene_Title.prototype.commandContinue = function () {
@@ -455,6 +487,7 @@ MBS.CustomTitle = {};
   /**
    * Opções
    *
+   * @method commandOptions
    * @this {Scene_Title}
    */
   Scene_Title.prototype.commandOptions = function () {
