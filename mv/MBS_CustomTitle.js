@@ -42,6 +42,10 @@
   @desc Tempo de espera antes do fade out de uma logo
   @default 50
 
+  @param Skip Title
+  @desc Caso queira pular o título, deixe como true, se não, como false
+  @default false
+
   @param NewGame
   @desc Imagem de 'Novo Jogo'
   @default img/system/NewGame.png
@@ -93,7 +97,7 @@ MBS.CustomTitle = {};
 (function($) {
   $.Parameters = PluginManager.parameters("MBS_CustomTitle");
   $.Param = $.Param || {};
-  
+
   //---------------------------------------------------------------------------
   // Configuração
 
@@ -101,6 +105,9 @@ MBS.CustomTitle = {};
   $.Param.splash = $.Parameters["Logo"].split(';');
   $.Param.splashWait = Number($.Parameters["Logo Fade"]);
   $.Param.splashTime = Number($.Parameters["Logo Still"]);
+
+  // Pular título
+  $.Param.skipTitle = ($.Parameters["Skip Title"] === "true");
 
   // Opções [Imagens]
   $.Param.newGame = $.Parameters["NewGame"];
@@ -211,7 +218,12 @@ MBS.CustomTitle = {};
     Scene_Base.prototype.update.call(this);
 
     var gotoTitle = function() {
-      SceneManager.goto(Scene_Title);
+      if ($.Param.skipTitle) {
+        DataManager.setupNewGame();
+        SceneManager.goto(Scene_Map);
+      } else {
+        SceneManager.goto(Scene_Title);
+      }
       Window_TitleCommand.initCommandPosition();
     };
 
