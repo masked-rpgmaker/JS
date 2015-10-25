@@ -216,3 +216,5 @@ MBS.VisualEquipment = {};
   };
 
 })(MBS.VisualEquipment);
+
+Imported["MBS_VisualEquipment"] = true;
