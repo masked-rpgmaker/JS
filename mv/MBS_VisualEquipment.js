@@ -46,8 +46,13 @@
   Caso queira adicionar um gráfico de equipamento a um evento, adicione nas
   notas dele a tag:
 
-  <equips:id1, id2, id3...>
+  <equips:a id1, w id2, a id3...>
 
+  Os ids devem vir precedidos pela inicial do tipo de equipamento seguido por
+  um espaço, para armaduras, use 'a id', e para armas use 'w id'. Ex.:
+  <equips: a 1, w 2>
+
+  Neste exemplo o evento usaria a armadura de ID 1 e arma de ID 2.
   Você pode por quantos IDs quiser, basta separá-los por vírgulas.
 
   =============================================================================
@@ -211,7 +216,19 @@ MBS.VisualEquipment = {};
         }
       }, this);
     } else if (this._character instanceof Game_Event) {
-
+      if (this._character.event().meta.equips) {
+        this._character.event().meta.equips.split(',').forEach(function (id) {
+          var t = id.trim().split(' ');
+          var equip;
+          if (t[0] === 'a') {
+            equip = $dataArmors[Number(t[t.length - 1])];
+          } else if (t[0] === 'w') {
+            equip = $dataWeapons[Number(t[t.length - 1])];
+          }
+          if (equip)
+            this._equipments.push(new Sprite_Equipment(this, equip));
+        }, this);
+      }
     }
   };
 
