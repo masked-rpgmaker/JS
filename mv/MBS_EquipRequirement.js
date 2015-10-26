@@ -124,6 +124,40 @@ MBS.EquipRequirement = {};
     return false;
   };
 
+  //---------------------------------------------------------------------------
+  // Window_EquipItem
+  //
+  // Classe das janelas de seleção de equipamento
+
+  // Alias
+  var _Window_EquipItem_includes = Window_EquipItem.prototype.includes;
+
+  /**
+   * Verificação de quando a janela deve usar o item ou não
+   *
+   * @method includes
+   * @param {Game_Item} item Item que será testado
+   */
+  Window_EquipItem.prototype.includes = function(item) {
+      var r = _Window_EquipItem_includes.call(this, item);
+      if (r) return true;
+      if (!r && (this._actor ? this._actor.canEquip(item) : true)) return false;
+      return Game_BattlerBase.prototype.canEquip.call(this._actor, item);
+  };
+
+  // Alias
+  var _Window_EquipItem_isEnabled = Window_EquipItem.prototype.isEnabled;
+
+  /**
+   * Verificação de quando um item está liberado na janela ou não
+   *
+   * @method isEnabled
+   * @param {Game_Item} item Item que será testado
+   */
+  Window_EquipItem.prototype.isEnabled = function(item) {
+      return _Window_EquipItem_isEnabled.call(this) && this._actor.canEquip(item);
+  };
+
 })(MBS.EquipRequirement);
 
 Imported["MBS_EquipRequirement"] = true;
