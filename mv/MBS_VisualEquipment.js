@@ -280,12 +280,14 @@ MBS.VisualEquipment = {};
         }
       }, this);
     } else if (this._character instanceof Game_Follower) {
-      this._character.actor().equips().forEach(function (equip) {
-        if (equip) {
-          if (equip.meta.graphic)
-            this._equipments.push(new Sprite_Equipment(this, equip));
-        }
-      }, this);
+      if (this._character.actor()) {
+        this._character.actor().equips().forEach(function (equip) {
+          if (equip) {
+            if (equip.meta.graphic)
+              this._equipments.push(new Sprite_Equipment(this, equip));
+          }
+        }, this);
+      }
     } else if (this._character instanceof Game_Event) {
       if (this._character.event().meta.equips) {
         this._character.event().meta.equips.split(',').forEach(function (id) {
