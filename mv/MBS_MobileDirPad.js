@@ -72,10 +72,6 @@ MBS.MobileDirPad = {};
 
 (function ($) {
 
-	Utils.isMobileDevice = function() {
-		return true;
-	};
-
 	//-----------------------------------------------------------------------------
 	// Setup
 
