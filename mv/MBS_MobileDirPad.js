@@ -270,8 +270,10 @@ MBS.MobileDirPad = {};
 	};
 
 	Scene_Map.prototype.hideUserInterface = function() {
-		this._dirPad.hide();
-		this._aButton.hide();
+		if (Utils.isMobileDevice()) {
+			this._dirPad.hide();
+			this._aButton.hide();
+		}
 	};
 
 	Scene_Map.prototype.processMapTouch = function() {
@@ -279,8 +281,10 @@ MBS.MobileDirPad = {};
 	};
 
 	Scene_Map.prototype.showUserInterface = function() {
-		this._dirPad.show();
-		this._aButton.show();
+		if (Utils.isMobileDevice()) {
+			this._dirPad.show();
+			this._aButton.show();
+		}
 	};
 
 	Scene_Map.prototype.createActionButton = function() {
