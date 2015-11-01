@@ -38,11 +38,20 @@
  * MapZoom set 2.0 duration 120
  * MapZoom set 2.0 1.5 duration 20
  *
- * You can also use this to reset the zoom (set it to 1.0):
+ * If you want the zoom to be centralized on a specific X, Y coordinate or an
+ * event, use this command:
+ * MapZoom center x y
+ * MapZoom center event id
  *
+ * Just replace the 'x' and 'y' or 'id' for the values you want. E.g.:
+ * MapZoom center 5 7
+ * MapZoom center event 3
+ *
+ * You can also use this to reset the zoom (set it to 1.0):
  * MapZoom reset [d]
  *
- * If you want, you can set the reset duration just changing 'd' for the 
+ * This will also reset the zoom center position.
+ * If you want, you can choose the reset duration just changing 'd' for the 
  * number of frames you want it to take.
  * E.g.:
  * MapZoom reset 30
@@ -86,6 +95,17 @@
  * Exemplos:
  * MapZoom set 2.0 duration 120
  * MapZoom set 2.0 1.5 duration 20
+ *
+ * Se você quiser, pode centralizar a câmera do zoom em um evento ou 
+ * coordenada usando esse comando:
+ *
+ * MapZoom center x y
+ * MapZoom center event id
+ *
+ * Só troque o 'x' e 'y' ou 'id' pelos valores que quiser.
+ * Exemplos:
+ * MapZoom center 5 7
+ * MapZoom center event 3
  *
  * Você pode ainda resetar o zoom (mudar para 1.0):
  *
@@ -147,6 +167,7 @@ MBS.MapZoom = {};
     Game_Map._zoomTime = 0;
     Game_Map._zoomDuration = Game_Map._zoomDuration || 0;
     Game_Map._zoom = Game_Map._zoom || new PIXI.Point(1.0, 1.0);
+    Game_Map._zoomCenter = $gamePlayer;
     this._tilemap = null;
   };
 
@@ -186,13 +207,24 @@ MBS.MapZoom = {};
   	Game_Map._zoomDuration = duration;
   };
 
+  Game_Map.prototype.setZoomCenter = function(a, b) {
+  	if (b) {
+  		Game_Map._zoomCenter = new PIXI.Point(a, b);
+  	} else if (a) {
+  		Game_Map._zoomCenter = a;
+  	} else {
+  		Game_Map._zoomCenter = $gamePlayer;
+  	}
+  };
+
   /**
    * Evento de alteração de zoom
    */
   Game_Map.prototype.onZoomChange = function(tilemap) {
   	if (tilemap) {
   		tilemap.scale = Game_Map.zoom;
-  		$gamePlayer.center($gamePlayer.x, $gamePlayer.y);
+  		if (Game_Map._zoomCenter)
+  			$gamePlayer.center(Game_Map._zoomCenter.x, Game_Map._zoomCenter.y);
   	}
   };
 
@@ -238,6 +270,40 @@ MBS.MapZoom = {};
   });
 
   //-----------------------------------------------------------------------------
+  // Game_Event
+  //
+  // Classe dos eventos
+
+  var Game_Event_update = Game_Event.prototype.update;
+
+  Game_Event.prototype.updateScroll = function(lastScrolledX, lastScrolledY) {
+    var x1 = lastScrolledX;
+    var y1 = lastScrolledY;
+    var x2 = this.scrolledX();
+    var y2 = this.scrolledY();
+    if (y2 > y1 && y2 > $gamePlayer.centerY()) {
+        $gameMap.scrollDown(y2 - y1);
+    }
+    if (x2 < x1 && x2 < $gamePlayer.centerX()) {
+        $gameMap.scrollLeft(x1 - x2);
+    }
+    if (x2 > x1 && x2 > $gamePlayer.centerX()) {
+        $gameMap.scrollRight(x2 - x1);
+    }
+    if (y2 < y1 && y2 < $gamePlayer.centerY()) {
+        $gameMap.scrollUp(y1 - y2);
+    }
+  };
+
+  Game_Event.prototype.update = function() {
+    var lastScrolledX = this.scrolledX();
+    var lastScrolledY = this.scrolledY();
+    Game_Event_update.apply(this, arguments);
+    if (this === Game_Map._zoomCenter)
+    	this.updateScroll(lastScrolledX, lastScrolledY);
+  };
+
+  //-----------------------------------------------------------------------------
   // Game_Player
   //
   // Classe do jogador
@@ -245,6 +311,7 @@ MBS.MapZoom = {};
   // Alias
   var _GamePlayer_centerX = Game_Player.prototype.centerX;
   var _GamePlayer_centerY = Game_Player.prototype.centerY;
+  var _GamePlayer_updateScroll = Game_Player.prototype.updateScroll;
 
   Game_Player.prototype.centerX = function() {
     return _GamePlayer_centerX.call(this) / Game_Map.zoom.x;
@@ -252,6 +319,11 @@ MBS.MapZoom = {};
 
   Game_Player.prototype.centerY = function() {
     return _GamePlayer_centerY.call(this) / Game_Map.zoom.y;
+  };
+
+  Game_Player.prototype.updateScroll = function(lastScrolledX, lastScrolledY) {
+    if (this === Game_Map._zoomCenter) 
+    	_GamePlayer_updateScroll.apply(this, arguments);
   };
 
   //-----------------------------------------------------------------------------
@@ -320,8 +392,17 @@ MBS.MapZoom = {};
   	  } else if (args[0] == "reset") {
   	  	if (args[1]) {
   	  		$gameMap.setZoom(1.0, 1.0, Number(args[1]));
+  	  		$gameMap.setZoomCenter(null);
   	  	} else {
   	  		$gameMap.setZoom(1.0);
+  	  	}
+  	  } else if (args[0] == "center") {
+  	  	if (args[1] == "event") {
+  	  		var ev = $gameMap.event(Number(args[2]));
+  	  		if (ev)
+  	  			$gameMap.setZoomCenter(ev);
+  	  	} else {
+  	  		$gameMap.setZoomCenter(Number(args[1]), Number(args[2]));
   	  	}
   	  }
   	}
@@ -330,7 +411,7 @@ MBS.MapZoom = {};
 })(MBS.MapZoom);
 
 if (Imported["MVCommons"]) {
-  PluginManager.register("MBS_MapZoom", 1.0, "Makes it possible to zoom in and out the game map whenever you want", {  
+  PluginManager.register("MBS_MapZoom", 1.1, "Makes it possible to zoom in and out the game map whenever you want", {  
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
