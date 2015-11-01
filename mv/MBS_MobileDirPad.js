@@ -61,6 +61,10 @@
  @desc Number of frames the UI hiding take
  @default 15
 
+ @param PC Debug
+ @desc Set to 'true' if you want to debug the script on a computer and to 'false' otherwise.
+ @default true
+
 */
 
 var Imported = Imported || {};
@@ -95,6 +99,8 @@ MBS.MobileDirPad = {};
 
 	$.Param.hideDuration = Number($.Parameters["Hide Duration"]);
 
+	$.Param.pcDebug = $.Parameters["PC Debug"].toLowerCase() === "true";
+ 
 
 	//-----------------------------------------------------------------------------
 	// Sprite_DirPad
@@ -156,7 +162,7 @@ MBS.MobileDirPad = {};
 
 	Sprite_DirPad.prototype.hide = function() {
 		this._moveDuration = $.Param.hideDuration;
-		var dest = 0 - this.width * (1 + this.anchor.x);
+		var dest = 0 - 64 - this.width * (1 + this.anchor.x);
 		this._moveSpeed = (dest - this.x) / this._moveDuration;
 	};
 
@@ -213,7 +219,7 @@ MBS.MobileDirPad = {};
 
 	Sprite_Button.prototype.hide = function() {
 		this._moveDuration = $.Param.hideDuration;
-		var dest = Graphics.width + this.width * this.anchor.x;
+		var dest = Graphics.width + this.width * this.anchor.x + 64;
 		this._moveSpeed = (dest - this.x) / this._moveDuration;
 	}
 
@@ -232,9 +238,13 @@ MBS.MobileDirPad = {};
 	var Scene_Map_createDisplayObjects = Scene_Map.prototype.createDisplayObjects;
 	var Scene_Map_processMapTouch = Scene_Map.prototype.processMapTouch;
 
+	Scene_Map.prototype.isMobileDevice = function() {
+		return Utils.isMobileDevice() || $.Param.pcDebug;
+	};
+
 	Scene_Map.prototype.createDisplayObjects = function() {
 	    Scene_Map_createDisplayObjects.apply(this, arguments);
-	    if (Utils.isMobileDevice()) {
+	    if (this.isMobileDevice()) {
 		    this.createDirPad();
 		    this.createActionButton();
 		}
@@ -266,18 +276,18 @@ MBS.MobileDirPad = {};
 	};
 
 	Scene_Map.prototype.hideUserInterface = function() {
-		if (Utils.isMobileDevice()) {
+		if (this.isMobileDevice()) {
 			this._dirPad.hide();
 			this._aButton.hide();
 		}
 	};
 
 	Scene_Map.prototype.processMapTouch = function() {
-		if (!Utils.isMobileDevice()) Scene_Map_processMapTouch.apply(this, arguments);
+		if (!this.isMobileDevice()) Scene_Map_processMapTouch.apply(this, arguments);
 	};
 
 	Scene_Map.prototype.showUserInterface = function() {
-		if (Utils.isMobileDevice()) {
+		if (this.isMobileDevice()) {
 			this._dirPad.show();
 			this._aButton.show();
 		}
