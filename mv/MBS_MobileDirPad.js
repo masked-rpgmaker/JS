@@ -22,7 +22,8 @@
  =============================================================================
  How to use
  =============================================================================
- Not much to say here, just setup the plugin correctly and enable it.
+ If you want to erase an action button, just leave its image path empty. 
+ There's nothing else you need to do, just setup it correctly.
 
  =============================================================================
  Credits
@@ -47,11 +48,11 @@
 
  @param ActionButton Position
  @desc The ActionButton image position on screen (on format x; y)
- @default 720; 452
+ @default 688; 452
 
  @param CancelButton Position
  @desc The ActionButton image position on screen (on format x; y)
- @default 752; 484
+ @default 752; 516
 
  @param Opacity
  @desc The opacity used on the DPad and Action Button
@@ -99,7 +100,7 @@ MBS.MobileDirPad = {};
 
 	$.Param.hideDuration = Number($.Parameters["Hide Duration"]);
 
-	$.Param.pcDebug = $.Parameters["PC Debug"].toLowerCase() === "true";
+	$.Param.pcDebug = ($.Parameters["PC Debug"].toLowerCase() === "true") && Utils.isOptionValid('test');
  
 
 	//-----------------------------------------------------------------------------
@@ -125,6 +126,7 @@ MBS.MobileDirPad = {};
 
 	Sprite_DirPad.prototype.update = function() {
 		Sprite_Base.prototype.update.call(this);
+		if (!this.visible) return;
 		this.updateMovement();
 		this.updateTouch();
 	};
@@ -187,7 +189,10 @@ MBS.MobileDirPad = {};
 	Sprite_Button.prototype.initialize = function(type) {
 		Sprite_Base.prototype.initialize.call(this);
 		this._type = type;
-		this.bitmap = ImageManager.loadNormalBitmap(type == 0 ? $.Param.button : $.Param.cButton, 0);
+		if ((type == 0 ? $.Param.button : $.Param.cButton) == "") this.visible = false;
+		else
+			this.bitmap = ImageManager.loadNormalBitmap(type == 0 ? $.Param.button : $.Param.cButton, 0);
+
 		this.anchor.y = 0.5;
 		this.anchor.x = 0.5;
 		this._moveDuration = 0;
@@ -197,6 +202,7 @@ MBS.MobileDirPad = {};
 
 	Sprite_Button.prototype.update = function() {
 		Sprite_Base.prototype.update.call(this);
+		if (!this.visible) return;
 		this.updateMovement();
 		this.updateTouch();
 	};
@@ -212,8 +218,13 @@ MBS.MobileDirPad = {};
 		if (this._type == 0 && TouchInput.isPressed()) {
 			var rect = new PIXI.Rectangle(this.x - this.width * this.anchor.x, this.y - this.height * this.anchor.y, this.width, this.height);
 			Input._currentState['ok'] = rect.contains(TouchInput.x, TouchInput.y);
-		} else {
+		} else if (this._type == 0) {
 			Input._currentState['ok'] = false;
+		} else if (this._type == 1 && TouchInput.isTriggered()) {
+			var rect = new PIXI.Rectangle(this.x - this.width * this.anchor.x, this.y - this.height * this.anchor.y, this.width, this.height);
+			Input._currentState['escape'] = rect.contains(TouchInput.x, TouchInput.y);
+		} else if (this._type == 1) {
+			Input._currentState['escape'] = false;
 		}
 	};
 
@@ -230,25 +241,77 @@ MBS.MobileDirPad = {};
 	}
 
 	//-----------------------------------------------------------------------------
+	// Scene_Base
+	//
+	// The base scene class for all other scenes
+
+	var Scene_Base_start = Scene_Base.prototype.start;
+	var Scene_Base_update = Scene_Base.prototype.update;
+
+	Scene_Base.prototype.isMobileDevice = function() {
+		return Utils.isMobileDevice() || $.Param.pcDebug;
+	};
+
+	Scene_Base.prototype.start = function() {
+	    Scene_Base_start.apply(this, arguments);
+	    if (this.isMobileDevice()) {
+		    this.createDirPad();
+		    this.createActionButtons();
+		    this.showUserInterface();
+		}
+	};
+
+	Scene_Base.prototype.createDirPad = function() {
+		this._dirPad = new Sprite_DirPad();
+		this._dirPad.opacity = $.Param.opacity;
+
+		this._dirPad.x = $.Param.dpadPosition.x;
+		this._dirPad.y = $.Param.dpadPosition.y;
+
+		this.addChild(this._dirPad);
+	};
+
+	Scene_Base.prototype.createActionButtons = function() {
+		this._aButton = new Sprite_Button(0);
+		this._aButton.opacity = $.Param.opacity;
+
+		this._aButton.x = $.Param.buttonPosition.x;
+		this._aButton.y = $.Param.buttonPosition.y;
+
+		this._cButton = new Sprite_Button(1);
+		this._cButton.opacity = $.Param.opacity;
+
+		this._cButton.x = $.Param.cButtonPosition.x;
+		this._cButton.y = $.Param.cButtonPosition.y;
+
+		this.addChild(this._aButton);
+		this.addChild(this._cButton);
+	};
+
+	Scene_Base.prototype.hideUserInterface = function() {
+		if (this.isMobileDevice()) {
+			this._dirPad.hide();
+			this._aButton.hide();
+			this._cButton.hide();
+		}
+	};
+
+	Scene_Base.prototype.showUserInterface = function() {
+		if (this.isMobileDevice()) {
+			this._dirPad.show();
+			this._aButton.show();
+			this._cButton.show();
+		}
+	};
+
+	//-----------------------------------------------------------------------------
 	// Scene_Map
 	//
 	// The map scene
 
 	var Scene_Map_createMessageWindows = Scene_Map.prototype.createMessageWindow;
-	var Scene_Map_createDisplayObjects = Scene_Map.prototype.createDisplayObjects;
 	var Scene_Map_processMapTouch = Scene_Map.prototype.processMapTouch;
-
-	Scene_Map.prototype.isMobileDevice = function() {
-		return Utils.isMobileDevice() || $.Param.pcDebug;
-	};
-
-	Scene_Map.prototype.createDisplayObjects = function() {
-	    Scene_Map_createDisplayObjects.apply(this, arguments);
-	    if (this.isMobileDevice()) {
-		    this.createDirPad();
-		    this.createActionButton();
-		}
-	};
+	var Scene_Map_terminate = Scene_Map.prototype.terminate;
 
 	Scene_Map.prototype.createMessageWindow = function() {
 		Scene_Map_createMessageWindows.call(this);
@@ -265,42 +328,13 @@ MBS.MobileDirPad = {};
 		};
 	};
 
-	Scene_Map.prototype.createDirPad = function() {
-		this._dirPad = new Sprite_DirPad();
-		this._dirPad.opacity = $.Param.opacity;
-
-		this._dirPad.x = $.Param.dpadPosition.x;
-		this._dirPad.y = $.Param.dpadPosition.y;
-
-		this.addChild(this._dirPad);
-	};
-
-	Scene_Map.prototype.hideUserInterface = function() {
-		if (this.isMobileDevice()) {
-			this._dirPad.hide();
-			this._aButton.hide();
-		}
+	Scene_Map.prototype.terminate = function() {
+	    this._dirPad.visible = this._aButton.visible = this._cButton.visible = false;
+		Scene_Map_terminate.apply(this, arguments);
 	};
 
 	Scene_Map.prototype.processMapTouch = function() {
 		if (!this.isMobileDevice()) Scene_Map_processMapTouch.apply(this, arguments);
-	};
-
-	Scene_Map.prototype.showUserInterface = function() {
-		if (this.isMobileDevice()) {
-			this._dirPad.show();
-			this._aButton.show();
-		}
-	};
-
-	Scene_Map.prototype.createActionButton = function() {
-		this._aButton = new Sprite_Button(0);
-		this._aButton.opacity = $.Param.opacity;
-
-		this._aButton.x = $.Param.buttonPosition.x;
-		this._aButton.y = $.Param.buttonPosition.y;
-
-		this.addChild(this._aButton);
 	};
 
 })(MBS.MobileDirPad);
