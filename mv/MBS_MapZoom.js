@@ -162,8 +162,8 @@ MBS.MapZoom = {};
   Game_Map.prototype.update = function () {
   	_GameMap_update.apply(this, arguments);
   	if (Game_Map._zoomDuration > Game_Map._zoomTime) {
-	  Game_Map._zoom.x += (Game_Map._destZoom.x - Game_Map._zoom.x) / Game_Map._zoomDuration;
-	  Game_Map._zoom.y += (Game_Map._destZoom.y - Game_Map._zoom.y) / Game_Map._zoomDuration;
+	  Game_Map._zoom.x += Game_Map._spdZoom.x;
+	  Game_Map._zoom.y += Game_Map._spdZoom.y;
       Game_Map._zoomDuration--;
       this.onZoomChange(this._tilemap);
 	} else {
@@ -182,6 +182,7 @@ MBS.MapZoom = {};
   	if (y) {
   		Game_Map._destZoom.y = y;
   	}
+  	Game_Map._spdZoom = new PIXI.Point((Game_Map._destZoom.x - Game_Map._zoom.x) / duration, (Game_Map._destZoom.y - Game_Map._zoom.y) / duration);
   	Game_Map._zoomDuration = duration;
   };
 
@@ -267,7 +268,20 @@ MBS.MapZoom = {};
   Spriteset_Map.prototype.createTilemap = function() {
     _SpritesetMap_createTilemap.call(this);
     $gameMap._tilemap = this._tilemap;
-    $gameMap.setZoom(Game_Map.zoom.x, Game_Map.zoom.y);
+    $gameMap.setZoom(Game_Map.zoom.x, Game_Map.zoom.y, 1);
+  };
+
+
+  //-----------------------------------------------------------------------------
+  // DataManager
+  //
+  // Conserto de bug que fazia com que houvesse stack overflow
+
+  var DManager_makesave = DataManager.makeSaveContents;
+
+  DataManager.makeSaveContents = function() {
+  	$gameMap._tilemap = null;
+    return DManager_makesave.apply(this, arguments);
   };
 
   //-----------------------------------------------------------------------------
