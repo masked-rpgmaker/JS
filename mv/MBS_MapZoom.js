@@ -401,6 +401,8 @@ MBS.MapZoom = {};
   	  		var ev = $gameMap.event(Number(args[2]));
   	  		if (ev)
   	  			$gameMap.setZoomCenter(ev);
+  	  	} else if (args[1] == "reset") {
+  	  		$gameMap.setZoomCenter(null);
   	  	} else {
   	  		$gameMap.setZoomCenter(Number(args[1]), Number(args[2]));
   	  	}
