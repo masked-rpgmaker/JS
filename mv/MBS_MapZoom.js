@@ -219,7 +219,7 @@ MBS.MapZoom = {};
   	} else if (a) {
   		Game_Map._zoomCenter = a;
   	} else {
-  		Game_Map._zoomCenter = $gamePlayer;
+  		Game_Map._zoomCenter = null;
   	}
   };
 
@@ -327,7 +327,7 @@ MBS.MapZoom = {};
   };
 
   Game_Player.prototype.updateScroll = function(lastScrolledX, lastScrolledY) {
-    if (this === Game_Map._zoomCenter) 
+    if (!Game_Map._zoomCenter) 
     	_GamePlayer_updateScroll.apply(this, arguments);
   };
 
