@@ -47,6 +47,9 @@
  * MapZoom center 5 7
  * MapZoom center event 3
  *
+ * To center on the player, use reset:
+ * MapZoom center reset
+ *
  * You can also use this to reset the zoom (set it to 1.0):
  * MapZoom reset [d]
  *
@@ -106,6 +109,9 @@
  * Exemplos:
  * MapZoom center 5 7
  * MapZoom center event 3
+ *
+ * Para centralizar no jogador, use o reset:
+ * MapZoom center reset
  *
  * Você pode ainda resetar o zoom (mudar para 1.0):
  *
@@ -167,7 +173,7 @@ MBS.MapZoom = {};
     Game_Map._zoomTime = 0;
     Game_Map._zoomDuration = Game_Map._zoomDuration || 0;
     Game_Map._zoom = Game_Map._zoom || new PIXI.Point(1.0, 1.0);
-    Game_Map._zoomCenter = $gamePlayer;
+    Game_Map._zoomCenter = null;
     this._tilemap = null;
   };
 
@@ -223,8 +229,7 @@ MBS.MapZoom = {};
   Game_Map.prototype.onZoomChange = function(tilemap) {
   	if (tilemap) {
   		tilemap.scale = Game_Map.zoom;
-  		if (Game_Map._zoomCenter)
-  			$gamePlayer.center(Game_Map._zoomCenter.x, Game_Map._zoomCenter.y);
+  		$gamePlayer.center((Game_Map._zoomCenter || $gamePlayer).x, (Game_Map._zoomCenter || $gamePlayer).y);
   	}
   };
 
