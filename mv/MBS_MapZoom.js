@@ -59,6 +59,11 @@
  * E.g.:
  * MapZoom reset 30
  *
+ * If you want some picture to zoom along with the map, add "[Zoom]" to its 
+ * name.
+ * E.g.:
+ * "img/pictures/SamplePicture1 [Zoom].png"
+ *
  * ===========================================================================
  * Credits
  * ===========================================================================
@@ -124,6 +129,11 @@
  * MapZoom reset 30
  * MapZoom reset
  *
+ * Se quiser que uma picture seja afetada pelo zoom do mapa, adicione [Zoom] 
+ * ao nome dela.
+ * Exemplo:
+ * "img/pictures/Imagem1 [Zoom].png"
+ *
  * ===========================================================================
  * Créditos
  * ===========================================================================
@@ -174,7 +184,7 @@ MBS.MapZoom = {};
     Game_Map._zoomDuration = Game_Map._zoomDuration || 0;
     Game_Map._zoom = Game_Map._zoom || new PIXI.Point(1.0, 1.0);
     Game_Map._zoomCenter = null;
-    this._tilemap = null;
+    Game_Map._spriteset = null;
   };
 
   /**
@@ -192,7 +202,7 @@ MBS.MapZoom = {};
 	  Game_Map._zoom.x += Game_Map._spdZoom.x;
 	  Game_Map._zoom.y += Game_Map._spdZoom.y;
       Game_Map._zoomDuration--;
-      this.onZoomChange(this._tilemap);
+      this.onZoomChange();
 	} else {
 	  Game_Map._zoomTime = 0;
 	  Game_Map._zoomDuration = 0;
@@ -226,11 +236,8 @@ MBS.MapZoom = {};
   /**
    * Evento de alteração de zoom
    */
-  Game_Map.prototype.onZoomChange = function(tilemap) {
-  	if (tilemap) {
-  		tilemap.scale = Game_Map.zoom;
-  		$gamePlayer.center((Game_Map._zoomCenter || $gamePlayer).x, (Game_Map._zoomCenter || $gamePlayer).y);
-  	}
+  Game_Map.prototype.onZoomChange = function() {
+    $gamePlayer.center((Game_Map._zoomCenter || $gamePlayer).x, (Game_Map._zoomCenter || $gamePlayer).y);
   };
 
   /**
@@ -337,18 +344,56 @@ MBS.MapZoom = {};
   // Spriteset do mapa do jogo
 
   // Alias
-  var _SpritesetMap_createTilemap = Spriteset_Map.prototype.createTilemap;
+  var _SpritesetMap_createLowLayer = Spriteset_Map.prototype.createLowerLayer;
+  var _SpritesetMap_update = Spriteset_Map.prototype.update;
 
-  /**
-   * Atualização do tilemap
-   */
-  Spriteset_Map.prototype.createTilemap = function() {
-    _SpritesetMap_createTilemap.call(this);
-    $gameMap._tilemap = this._tilemap;
+  Spriteset_Map.prototype.createLowerLayer = function() {
+    _SpritesetMap_createLowLayer.apply(this, arguments);
     $gameMap.setZoom(Game_Map.zoom.x, Game_Map.zoom.y, 1);
   };
 
+  Spriteset_Map.prototype.update = function() {
+    _SpritesetMap_update.apply(this, arguments);
+  };
 
+  Spriteset_Base.prototype.updatePosition = function() {
+    var scale = Game_Map.zoom;
+    var screen = $gameScreen;
+    this.x = Math.round(-screen.zoomX() * (scale.x - 1));
+    this.y = Math.round(-screen.zoomY() * (scale.x - 1));
+    this.x += Math.round(screen.shake());
+    if (this.scale.x !== scale.x || this.scale.y !== scale.y) {
+        this.scale = scale.clone();
+        this._parallax.move(this._parallax.x, this._parallax.y, Graphics.width / scale.x, Graphics.height / scale.y);
+    }
+  };
+
+  //-----------------------------------------------------------------------------
+  // Game_Picture
+  //
+  // Objeto das pictures do jogo
+
+  var _GamePicture_update = Game_Picture.prototype.update;
+
+  Game_Picture.prototype.update = function() {
+      _GamePicture_update.apply(this, arguments)
+      if (this.mapZoom()) this.updateZoom();
+  };
+
+  Game_Picture.prototype.updateZoom = function() {
+    if (this._duration > 0) {
+        this._scaleX *= Game_Map.zoom.x;
+        this._scaleY *= Game_Map.zoom.y;
+    } else {
+        this._scaleX = this._targetScaleX * Game_Map.zoom.x;
+        this._scaleY = this._targetScaleY * Game_Map.zoom.y;
+    }
+  };
+
+  Game_Picture.prototype.mapZoom = function() {
+    return !!this.name().toLowerCase().match(/\s*\[\s*zoom\s*\]\s*/);
+  };
+/*
   //-----------------------------------------------------------------------------
   // DataManager
   //
@@ -357,9 +402,9 @@ MBS.MapZoom = {};
   var DManager_makesave = DataManager.makeSaveContents;
 
   DataManager.makeSaveContents = function() {
-  	$gameMap._tilemap = null;
+  	$gameMap._spriteset = null;
     return DManager_makesave.apply(this, arguments);
-  };
+  };*/
 
   //-----------------------------------------------------------------------------
   // Plugin command
@@ -418,7 +463,7 @@ MBS.MapZoom = {};
 })(MBS.MapZoom);
 
 if (Imported["MVCommons"]) {
-  PluginManager.register("MBS_MapZoom", 1.2, "Makes it possible to zoom in and out the game map whenever you want", {  
+  PluginManager.register("MBS_MapZoom", 1.1, "Makes it possible to zoom in and out the game map whenever you want", {  
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
