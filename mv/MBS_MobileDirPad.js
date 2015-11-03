@@ -79,6 +79,7 @@ MBS.MobileDirPad = {};
 
 	//-----------------------------------------------------------------------------
 	// Setup
+	//
 
 	$.Parameters = $plugins.filter(function(p) {return p.description.contains('<MBS MobileDirPad>');})[0].parameters;
 	$.Param = $.Param || {};
@@ -248,17 +249,33 @@ MBS.MobileDirPad = {};
 	var Scene_Base_start = Scene_Base.prototype.start;
 	var Scene_Base_update = Scene_Base.prototype.update;
 
+	Scene_Base.useDirPad = function(flag) {
+		Scene_Base.dirpad = flag;
+		if (flag) {
+			SceneManager._scene.showUserInterface();
+		} else {
+			SceneManager._scene.hideUserInterface();
+		}
+	};
+
 	Scene_Base.prototype.isMobileDevice = function() {
 		return Utils.isMobileDevice() || $.Param.pcDebug;
 	};
 
 	Scene_Base.prototype.start = function() {
 	    Scene_Base_start.apply(this, arguments);
+	    Scene_Base.dirpad = this.isMobileDevice();
 	    if (this.isMobileDevice()) {
 		    this.createDirPad();
 		    this.createActionButtons();
 		    this.showUserInterface();
 		}
+	};
+
+	Scene_Base.prototype.update = function() {
+		Scene_Base_update.apply(this, arguments);
+		if (this.isMobileDevice())
+			this._dirPad.visible = this._aButton.visible = this._cButton.visible =Scene_Base.dirpad;
 	};
 
 	Scene_Base.prototype.createDirPad = function() {
@@ -334,7 +351,7 @@ MBS.MobileDirPad = {};
 	};
 
 	Scene_Map.prototype.processMapTouch = function() {
-		if (!this.isMobileDevice()) Scene_Map_processMapTouch.apply(this, arguments);
+		if (!(this.isMobileDevice() && Scene_Base.dirpad)) Scene_Map_processMapTouch.apply(this, arguments);
 	};
 
 })(MBS.MobileDirPad);
