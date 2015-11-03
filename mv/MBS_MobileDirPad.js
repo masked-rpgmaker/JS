@@ -23,7 +23,11 @@
  How to use
  =============================================================================
  If you want to erase an action button, just leave its image path empty. 
- There's nothing else you need to do, just setup it correctly.
+
+ If you want to disable/enable the plugin, use these plugin commands:
+
+ MobileDirPad disable
+ MobileDirPad enable
 
  =============================================================================
  Credits
@@ -103,6 +107,18 @@ MBS.MobileDirPad = {};
 
 	$.Param.pcDebug = ($.Parameters["PC Debug"].toLowerCase() === "true") && Utils.isOptionValid('test');
  
+ 	//-----------------------------------------------------------------------------
+	// Module functions
+	//
+
+ 	$.enable = function(flag) {
+		Scene_Base.dirpad = flag;
+		if (flag) {
+			SceneManager._scene.showUserInterface();
+		} else {
+			SceneManager._scene.hideUserInterface();
+		}
+	};
 
 	//-----------------------------------------------------------------------------
 	// Sprite_DirPad
@@ -249,15 +265,6 @@ MBS.MobileDirPad = {};
 	var Scene_Base_start = Scene_Base.prototype.start;
 	var Scene_Base_update = Scene_Base.prototype.update;
 
-	Scene_Base.useDirPad = function(flag) {
-		Scene_Base.dirpad = flag;
-		if (flag) {
-			SceneManager._scene.showUserInterface();
-		} else {
-			SceneManager._scene.hideUserInterface();
-		}
-	};
-
 	Scene_Base.prototype.isMobileDevice = function() {
 		return Utils.isMobileDevice() || $.Param.pcDebug;
 	};
@@ -354,12 +361,30 @@ MBS.MobileDirPad = {};
 		if (!(this.isMobileDevice() && Scene_Base.dirpad)) Scene_Map_processMapTouch.apply(this, arguments);
 	};
 
+	//-----------------------------------------------------------------------------
+	// Plugin Command
+	//
+
+  	var _GameInterpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+
+  	Game_Interpreter.prototype.pluginCommand = function (command, args) {
+  		_GameInterpreter_pluginCommand.apply(this, arguments);
+
+  		if (command == "MobileDirPad") {
+  			if (args[0] == "enable") {
+  				$.enable(true);
+  			} else if (args[0] == "disable") {
+  				$.enable(false);
+  			}
+  		}
+  	};
+
 })(MBS.MobileDirPad);
 
-Imported["MBS_MobileDirPad"] = 1.0;
+Imported["MBS_MobileDirPad"] = 1.1;
 
 if (Imported["MVCommons"]) {
-  	PluginManager.register("MBS_MobileDirPad", 1.0, "Shows a DirPad and action buttons when using mobile devices", {  
+  	PluginManager.register("MBS_MobileDirPad", 1.1, "Shows a DirPad and action buttons when using mobile devices", {  
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
