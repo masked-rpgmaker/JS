@@ -125,7 +125,7 @@ MBS.SmoothScroll = {};
 	    	d = this.centerX() - x2;
 	    	e = d * $gameMap.tileWidth();
 	        if (e >= $.Param.margin)
-	        	$gameMap.scrollLeft(x1 - x2;
+	        	$gameMap.scrollLeft(x1 - x2);
 	        else
 	        	$gameMap.startScroll(4, d, this.scrollSpeed(d * $gameMap.tileWidth()));
 	    }
