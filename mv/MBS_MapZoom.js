@@ -203,10 +203,11 @@ MBS.MapZoom = {};
 	  Game_Map._zoom.y += Game_Map._spdZoom.y;
       Game_Map._zoomDuration--;
       this.onZoomChange();
-	} else {
-	  Game_Map._zoomTime = 0;
-	  Game_Map._zoomDuration = 0;
-	}
+	} if (Game_Map._zoomTime > 0) {
+      Game_Map._zoom = Game_Map._destZoom;
+      Game_Map._zoomTime = 0;
+      Game_Map._zoomDuration = 0;
+    }
   };
 
   /**
@@ -258,20 +259,6 @@ MBS.MapZoom = {};
     var originY = this.displayY() * tileHeight;
     var mapY = Math.floor((originY + y) / tileHeight);
     return this.roundY(mapY);
-  };
-
-  /**
-   * Número de tiles na horizontal na tela
-   */
-  Game_Map.prototype.screenTileX = function() {
-    return Graphics.width / this.tileWidth() / Game_Map.zoom.x;
-  };
-
-  /**
-   * Número de tiles na vertical na teela
-   */
-  Game_Map.prototype.screenTileY = function() {
-    return Graphics.height / this.tileHeight() / Game_Map.zoom.y;
   };
 
   // Zoom
@@ -364,6 +351,8 @@ MBS.MapZoom = {};
     this.x += Math.round(screen.shake());
     if (this.scale.x !== scale.x || this.scale.y !== scale.y) {
         this.scale = scale.clone();
+        this._tilemap.width = Graphics.width + this._margin * 2 / this.scale.x;
+        this._tilemap.height = Graphics.height + this._margin * 2 / this.scale.y;
         this._parallax.move(this._parallax.x, this._parallax.y, Graphics.width / scale.x, Graphics.height / scale.y);
     }
   };
@@ -393,18 +382,6 @@ MBS.MapZoom = {};
   Game_Picture.prototype.mapZoom = function() {
     return !!this.name().toLowerCase().match(/\s*\[\s*zoom\s*\]\s*/);
   };
-/*
-  //-----------------------------------------------------------------------------
-  // DataManager
-  //
-  // Conserto de bug que fazia com que houvesse stack overflow
-
-  var DManager_makesave = DataManager.makeSaveContents;
-
-  DataManager.makeSaveContents = function() {
-  	$gameMap._spriteset = null;
-    return DManager_makesave.apply(this, arguments);
-  };*/
 
   //-----------------------------------------------------------------------------
   // Plugin command
