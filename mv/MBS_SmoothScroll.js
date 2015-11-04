@@ -117,7 +117,7 @@ MBS.SmoothScroll = {};
 	    	d = y2 - this.centerY();
 	    	e = d * $gameMap.tileHeight();
 	    	if (e >= $.Param.margin)
-	        	$gameMap.scrollDown((y2 - y1) * $.Param.margin / e);
+	        	$gameMap.scrollDown(y2 - y1);
 	        else
 	        	$gameMap.startScroll(2, d, this.scrollSpeed(d * $gameMap.tileHeight()));
 	    }
@@ -125,7 +125,7 @@ MBS.SmoothScroll = {};
 	    	d = this.centerX() - x2;
 	    	e = d * $gameMap.tileWidth();
 	        if (e >= $.Param.margin)
-	        	$gameMap.scrollLeft((x1 - x2) * $.Param.margin / e);
+	        	$gameMap.scrollLeft(x1 - x2;
 	        else
 	        	$gameMap.startScroll(4, d, this.scrollSpeed(d * $gameMap.tileWidth()));
 	    }
@@ -133,7 +133,7 @@ MBS.SmoothScroll = {};
 	    	d = x2 - this.centerX();
 	    	e = d * $gameMap.tileWidth();
 	        if (e >= $.Param.margin)
-	        	$gameMap.scrollRight((x2 - x1) * $.Param.margin / e);
+	        	$gameMap.scrollRight(x2 - x1);
 	        else
 	        	$gameMap.startScroll(6, d, this.scrollSpeed(d * $gameMap.tileWidth()));
 	    }
@@ -141,7 +141,7 @@ MBS.SmoothScroll = {};
 	    	d = this.centerY() - y2;
 	    	e = d * $gameMap.tileHeight();
 	        if (e >= $.Param.margin)
-	        	$gameMap.scrollUp((y1 - y2) * $.Param.margin / e);
+	        	$gameMap.scrollUp(y1 - y2);
 	        else
 	        	$gameMap.startScroll(8, d, this.scrollSpeed(d * $gameMap.tileHeight()));
 	    }
