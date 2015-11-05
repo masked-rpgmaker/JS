@@ -113,37 +113,37 @@ MBS.SmoothScroll = {};
 	    var x2 = this.scrolledX();
 	    var y2 = this.scrolledY();
 	    var d;
-	    if (y2 > y1 && y2 > this.centerY()) {
+	    if (y2 - this.centerY() > 0.1) {
 	    	d = y2 - this.centerY();
 	    	e = d * $gameMap.tileHeight();
 	    	if (e >= $.Param.margin)
-	        	$gameMap.scrollDown(y2 - y1);
+	        	$gameMap.startScroll(2, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
 	        else
-	        	$gameMap.startScroll(2, d, this.scrollSpeed(d * $gameMap.tileHeight()));
+	        	$gameMap.startScroll(2, d, this.scrollSpeed(e));
 	    }
-	    if (x2 < x1 && x2 < this.centerX()) {
+	    if (x2 - this.centerX() < -0.1) {
 	    	d = this.centerX() - x2;
 	    	e = d * $gameMap.tileWidth();
 	        if (e >= $.Param.margin)
-	        	$gameMap.scrollLeft(x1 - x2);
+	        	$gameMap.startScroll(4, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
 	        else
-	        	$gameMap.startScroll(4, d, this.scrollSpeed(d * $gameMap.tileWidth()));
+	        	$gameMap.startScroll(4, d, this.scrollSpeed(e));
 	    }
-	    if (x2 > x1 && x2 > this.centerX()) {
+	    if (x2 - this.centerX() > 0.1) {
 	    	d = x2 - this.centerX();
 	    	e = d * $gameMap.tileWidth();
 	        if (e >= $.Param.margin)
-	        	$gameMap.scrollRight(x2 - x1);
+	        	$gameMap.startScroll(6, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
 	        else
-	        	$gameMap.startScroll(6, d, this.scrollSpeed(d * $gameMap.tileWidth()));
+	        	$gameMap.startScroll(6, d, this.scrollSpeed(e));
 	    }
-	    if (y2 < y1 && y2 < this.centerY()) {
+	    if (y2 - this.centerY() < -0.1) {
 	    	d = this.centerY() - y2;
 	    	e = d * $gameMap.tileHeight();
 	        if (e >= $.Param.margin)
-	        	$gameMap.scrollUp(y1 - y2);
+	        	$gameMap.startScroll(8, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
 	        else
-	        	$gameMap.startScroll(8, d, this.scrollSpeed(d * $gameMap.tileHeight()));
+	        	$gameMap.startScroll(8, d, this.scrollSpeed(e));
 	    }
 	};
 
