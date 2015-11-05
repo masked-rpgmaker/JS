@@ -31,7 +31,7 @@
 
 	@param Scroll Speed
 	@desc The speed the scroll will adjust to the player coordinates. The higher the faster.
-	@default 1
+	@default 2
 */
 
 var Imported = Imported || {};
@@ -104,7 +104,7 @@ MBS.SmoothScroll = {};
 	// 
 
 	Game_Player.prototype.scrollSpeed = function(distance) {
-		return $.Param.speed * distance / $.Param.margin;
+		return $.Param.speed * distance / $.Param.margin * 2.0;
 	};
 
 	Game_Player.prototype.updateScroll = function(lastScrolledX, lastScrolledY) {
