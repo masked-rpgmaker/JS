@@ -282,7 +282,7 @@ MBS.MobileDirPad = {};
 	Scene_Base.prototype.update = function() {
 		Scene_Base_update.apply(this, arguments);
 		if (this.isMobileDevice())
-			this._dirPad.visible = this._aButton.visible = this._cButton.visible =Scene_Base.dirpad;
+			this._dirPad.visible = this._aButton.visible = this._cButton.visible = Scene_Base.dirpad;
 	};
 
 	Scene_Base.prototype.createDirPad = function() {
@@ -353,7 +353,8 @@ MBS.MobileDirPad = {};
 	};
 
 	Scene_Map.prototype.terminate = function() {
-	    this._dirPad.visible = this._aButton.visible = this._cButton.visible = false;
+		if (this.isMobileDevice())
+	    	this._dirPad.visible = this._aButton.visible = this._cButton.visible = false;
 		Scene_Map_terminate.apply(this, arguments);
 	};
 
@@ -381,10 +382,10 @@ MBS.MobileDirPad = {};
 
 })(MBS.MobileDirPad);
 
-Imported["MBS_MobileDirPad"] = 1.1;
+Imported["MBS_MobileDirPad"] = 1.0;
 
 if (Imported["MVCommons"]) {
-  	PluginManager.register("MBS_MobileDirPad", 1.1, "Shows a DirPad and action buttons when using mobile devices", {  
+  	PluginManager.register("MBS_MobileDirPad", 1.0, "Shows a DirPad and action buttons when using mobile devices", {  
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
