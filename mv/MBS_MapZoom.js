@@ -359,6 +359,10 @@ MBS.MapZoom = {};
     }
   };
 
+  //-----------------------------------------------------------------------------
+  // Tilemap
+  //
+
   Tilemap.prototype._createLayers = function() {
     var width = this._width;
     var height = this._height;
@@ -401,7 +405,7 @@ MBS.MapZoom = {};
 
     this.addChild(this._lowerLayer);
     this.addChild(this._upperLayer);
-};
+  };
 
   //-----------------------------------------------------------------------------
   // Game_Picture
@@ -429,14 +433,17 @@ MBS.MapZoom = {};
     return !!this.name().toLowerCase().match(/\s*\[\s*zoom\s*\]\s*/);
   };
 
+  //-----------------------------------------------------------------------------
+  // Game_Map
+  //
+
   Game_Map.prototype.screenTileX = function() {
     return Graphics.width / this.tileWidth() / Game_Map.zoom.x;
-};
+  };
 
-Game_Map.prototype.screenTileY = function() {
+  Game_Map.prototype.screenTileY = function() {
     return Graphics.height / this.tileHeight() / Game_Map.zoom.y;
-};
-
+  };
 
   //-----------------------------------------------------------------------------
   // Plugin command
