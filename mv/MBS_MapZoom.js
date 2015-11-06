@@ -311,7 +311,7 @@ MBS.MapZoom = {};
   var _GamePlayer_centerX = Game_Player.prototype.centerX;
   var _GamePlayer_centerY = Game_Player.prototype.centerY;
   var _GamePlayer_updateScroll = Game_Player.prototype.updateScroll;
-/*
+
   Game_Player.prototype.centerX = function() {
     return _GamePlayer_centerX.call(this) / Game_Map.zoom.x;
   };
@@ -319,7 +319,7 @@ MBS.MapZoom = {};
   Game_Player.prototype.centerY = function() {
     return _GamePlayer_centerY.call(this) / Game_Map.zoom.y;
   };
-*/
+
   Game_Player.prototype.updateScroll = function(lastScrolledX, lastScrolledY) {
     if (!Game_Map._zoomCenter || Game_Map._zoomCenter === this) 
     	_GamePlayer_updateScroll.apply(this, arguments);
@@ -345,12 +345,63 @@ MBS.MapZoom = {};
     this.x = Math.round(-Game_Map.zoom.x * (scale.x - 1));
     this.y = Math.round(-Game_Map.zoom.y * (scale.x - 1));
     this.x += Math.round(screen.shake());
-    if (this._tilemap.scale.x !== scale.x || this._tilemap.scale.y !== scale.y) {
-        this._tilemap.scale = scale.clone();
-        this._parallax.scale = scale.clone();
+    if (this.scale.x !== scale.x || this.scale.y !== scale.y) {
+        var w = ($gameMap.width() + 4) * $gameMap.tileWidth() + this._tilemap._margin * 2;
+        var h = ($gameMap.height() + 3) * $gameMap.tileHeight() + this._tilemap._margin * 2;
+        var r = w > this._tilemap.width || h > this._tilemap.height;
+        if (r) {
+            this._tilemap.width = w;
+            this._tilemap.height = h;
+            this._tilemap.refresh();
+        }
+        this.scale = scale.clone();
         this._parallax.move(this._parallax.x, this._parallax.y, Graphics.width / scale.x, Graphics.height / scale.y);
     }
   };
+
+  Tilemap.prototype._createLayers = function() {
+    var width = this._width;
+    var height = this._height;
+    var margin = this._margin;
+    var tileCols = Math.ceil(width / this._tileWidth) + 1;
+    var tileRows = Math.ceil(height / this._tileHeight) + 1;
+    var layerWidth = tileCols * this._tileWidth;
+    var layerHeight = tileRows * this._tileHeight;
+
+    if (this._lowerBitmap) {
+        this._lowerBitmap.clear();
+        this._lowerBitmap.resize(layerWidth, layerHeight);
+    } else
+        this._lowerBitmap = new Bitmap(layerWidth, layerHeight);
+
+    if (this._upperBitmap) {
+        this._upperBitmap.clear();
+        this._upperBitmap.resize(layerWidth, layerHeight);
+    }
+    else
+        this._upperBitmap = new Bitmap(layerWidth, layerHeight);
+
+    this._layerWidth = layerWidth;
+    this._layerHeight = layerHeight;
+
+    this._lowerLayer = this._lowerLayer || new Sprite();
+    this._lowerLayer.removeChildren();
+    this._lowerLayer.move(-margin, -margin, width, height);
+    this._lowerLayer.z = 0;
+
+    this._upperLayer = this._upperLayer || new Sprite();
+    this._upperLayer.removeChildren();
+    this._upperLayer.move(-margin, -margin, width, height);
+    this._upperLayer.z = 4;
+
+    for (var i = 0; i < 4; i++) {
+        this._lowerLayer.addChild(new Sprite(this._lowerBitmap));
+        this._upperLayer.addChild(new Sprite(this._upperBitmap));
+    }
+
+    this.addChild(this._lowerLayer);
+    this.addChild(this._upperLayer);
+};
 
   //-----------------------------------------------------------------------------
   // Game_Picture
@@ -377,6 +428,15 @@ MBS.MapZoom = {};
   Game_Picture.prototype.mapZoom = function() {
     return !!this.name().toLowerCase().match(/\s*\[\s*zoom\s*\]\s*/);
   };
+
+  Game_Map.prototype.screenTileX = function() {
+    return Graphics.width / this.tileWidth() / Game_Map.zoom.x;
+};
+
+Game_Map.prototype.screenTileY = function() {
+    return Graphics.height / this.tileHeight() / Game_Map.zoom.y;
+};
+
 
   //-----------------------------------------------------------------------------
   // Plugin command
