@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Mobile Dir Pad (v1.1.3)
+// MBS - Mobile Dir Pad (v1.2.0)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -78,6 +78,9 @@
  @desc Set to 'true' if you want to debug the script on a computer and to 'false' otherwise.
  @default true
 
+ @param Only in Map
+ @desc Set to 'true' if you want the dpad to show up just at the map scene and to 'false' otherwise.
+ @default false
 */
 
 var Imported = Imported || {};
@@ -116,6 +119,7 @@ MBS.MobileDirPad = {};
 	$.Param.hideDuration = Number($.Parameters["Hide Duration"]);
 
 	$.Param.pcDebug = ($.Parameters["PC Debug"].toLowerCase() === "true") && Utils.isOptionValid('test');
+	$.Param.onlyMap = ($.Parameters["Only in Map"].toLowerCase() === "true");
  
  	//-----------------------------------------------------------------------------
 	// Module functions
@@ -296,9 +300,11 @@ MBS.MobileDirPad = {};
 	    Scene_Base_start.apply(this, arguments);
 	    Scene_Base.dirpad = Scene_Base.dirpad && this.isMobileDevice();
 
-	    this.createDirPad();
-	    this.createActionButtons();
-	    $.enable(Scene_Base.dirpad);
+	    if (!$.Param.onlyMap || this instanceof Scene_Map) {
+		    this.createDirPad();
+		    this.createActionButtons();
+		    $.enable(Scene_Base.dirpad);
+		}
 	};
 
 	Scene_Base.prototype.update = function() {
