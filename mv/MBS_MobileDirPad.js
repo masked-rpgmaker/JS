@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Mobile Dir Pad (v1.1.2)
+// MBS - Mobile Dir Pad (v1.1.3)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -303,7 +303,7 @@ MBS.MobileDirPad = {};
 
 	Scene_Base.prototype.update = function() {
 		Scene_Base_update.apply(this, arguments);
-		if (this.isMobileDevice())
+		if (this.isMobileDevice() && this._dirPad != undefined && this._aButton != undefined && this._cButton != undefined)
 			this._dirPad.visible = this._aButton.visible = this._cButton.visible = Scene_Base.dirpad;
 	};
 
