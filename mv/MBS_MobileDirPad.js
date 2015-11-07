@@ -29,6 +29,10 @@
  MobileDirPad disable
  MobileDirPad enable
 
+ You might also want to use diagonal movement with this script, this is 
+ possible now, just add the 8D movement plugin to your project and everything
+ should work fine.
+
  =============================================================================
  Credits
  =============================================================================
