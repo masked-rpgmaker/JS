@@ -283,7 +283,7 @@ MBS.MobileDirPad = {};
 	//
 	// The base scene class for all other scenes
 
-	var Scene_Base_start = Scene_Base.prototype.start;
+	var Scene_Base_create = Scene_Base.prototype.create;
 	var Scene_Base_update = Scene_Base.prototype.update;
 
 	Scene_Base.prototype.isMobileDevice = function() {
@@ -292,8 +292,8 @@ MBS.MobileDirPad = {};
 
 	Scene_Base.dirpad = true;
 
-	Scene_Base.prototype.start = function() {
-	    Scene_Base_start.apply(this, arguments);
+	Scene_Base.prototype.create = function() {
+	    Scene_Base_create.apply(this, arguments);
 	    Scene_Base.dirpad = Scene_Base.dirpad && this.isMobileDevice();
 
 	    this.createDirPad();
