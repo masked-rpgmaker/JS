@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Mobile Dir Pad
+// MBS - Mobile Dir Pad (v1.1.1)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -296,7 +296,7 @@ MBS.MobileDirPad = {};
 
 	    this.createDirPad();
 	    this.createActionButtons();
-	    if (this.isMobileDevice()) this.showUserInterface();
+	    $.enable(Scene_Base.dirpad);
 	};
 
 	Scene_Base.prototype.update = function() {
@@ -333,19 +333,15 @@ MBS.MobileDirPad = {};
 	};
 
 	Scene_Base.prototype.hideUserInterface = function() {
-		if (this.isMobileDevice()) {
-			this._dirPad.hide();
-			this._aButton.hide();
-			this._cButton.hide();
-		}
+		this._dirPad.hide();
+		this._aButton.hide();
+		this._cButton.hide();
 	};
 
 	Scene_Base.prototype.showUserInterface = function() {
-		if (this.isMobileDevice()) {
-			this._dirPad.show();
-			this._aButton.show();
-			this._cButton.show();
-		}
+		this._dirPad.show();
+		this._aButton.show();
+		this._cButton.show();
 	};
 
 	//-----------------------------------------------------------------------------
