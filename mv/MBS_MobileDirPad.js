@@ -46,6 +46,10 @@
  @desc The file path for the Cancel Button image
  @default ./img/system/CancelButton.png
 
+ @param Button Size
+ @desc The DPad buttons size
+ @default 52
+
  @param DPad Position
  @desc The DirPad image position on screen (on format x; y)
  @default 128; 452
@@ -87,6 +91,8 @@ MBS.MobileDirPad = {};
 
 	$.Parameters = $plugins.filter(function(p) {return p.description.contains('<MBS MobileDirPad>');})[0].parameters;
 	$.Param = $.Param || {};
+
+	$.Param.size = Number($.Parameters["Button Size"]);
 
 	$.Param.dpad = $.Parameters["DPad Image"];
 	$.Param.button = $.Parameters["ActionButton Image"];
@@ -138,7 +144,7 @@ MBS.MobileDirPad = {};
 		this.anchor.y = 0.5;
 		this.anchor.x = 0.5;
 		this.z = 5;
-		this._lastDir = null;
+		this._lastDir = '';
 	};
 
 	Sprite_DirPad.prototype.update = function() {
@@ -156,26 +162,37 @@ MBS.MobileDirPad = {};
 	};
 
 	Sprite_DirPad.prototype.updateTouch = function() {
-		if (this._lastDir) {
-			Input._currentState[this._lastDir] = false;
-			this._lastDir = null;
+		if (this._lastDir.length > 0) {
+			this._lastDir.split(" ").forEach(function (d) { 
+				Input._currentState[d] = false; 
+			});
+			this._lastDir = '';
 		}
+
+		var s = $.Param.size;
+
 		if (TouchInput.isPressed()) {
 			var sx = this.x - this.width * this.anchor.x;
 			var sy = this.y - this.height * this.anchor.y;
-			if (new PIXI.Rectangle(sx + 104, sy + 52, 52, 52).contains(TouchInput.x,TouchInput.y)) {
+			var rect = this.getBounds();
+			
+			this._lastDir = '';
+
+			if (rect.contains(TouchInput.x,TouchInput.y) && TouchInput.x - rect.x > s * 2) {
 				Input._currentState['right'] = true;
 				this._lastDir = 'right';
-			} else if (new PIXI.Rectangle(sx, sy + 52, 52, 52).contains(TouchInput.x,TouchInput.y)) {
+			} else if (rect.contains(TouchInput.x,TouchInput.y) && TouchInput.x - rect.x < s) {
 				Input._currentState['left'] = true;
 				this._lastDir = 'left';
-			} else if (new PIXI.Rectangle(sx + 52, sy, 52, 52).contains(TouchInput.x,TouchInput.y)) {
-				Input._currentState['up'] = true;
-				this._lastDir = 'up';
-			} else if (new PIXI.Rectangle(sx + 52, sy + 104, 52, 52).contains(TouchInput.x,TouchInput.y)) {
+			} 
+			if (rect.contains(TouchInput.x,TouchInput.y) && TouchInput.y - rect.y > s * 2) {
 				Input._currentState['down'] = true;
-				this._lastDir = 'down';
+				this._lastDir += ' down';
+			} else if (rect.contains(TouchInput.x,TouchInput.y) && TouchInput.y - rect.y < s) {
+				Input._currentState['up'] = true;
+				this._lastDir += ' up';
 			}
+			this._lastDir = this._lastDir.trim();
 		}
 	};
 
@@ -272,11 +289,10 @@ MBS.MobileDirPad = {};
 	Scene_Base.prototype.start = function() {
 	    Scene_Base_start.apply(this, arguments);
 	    Scene_Base.dirpad = this.isMobileDevice();
-	    if (this.isMobileDevice()) {
-		    this.createDirPad();
-		    this.createActionButtons();
-		    this.showUserInterface();
-		}
+
+	    this.createDirPad();
+	    this.createActionButtons();
+	    if (this.isMobileDevice()) this.showUserInterface();
 	};
 
 	Scene_Base.prototype.update = function() {
@@ -382,10 +398,10 @@ MBS.MobileDirPad = {};
 
 })(MBS.MobileDirPad);
 
-Imported["MBS_MobileDirPad"] = 1.0;
+Imported["MBS_MobileDirPad"] = 1.1;
 
 if (Imported["MVCommons"]) {
-  	PluginManager.register("MBS_MobileDirPad", 1.0, "Shows a DirPad and action buttons when using mobile devices", {  
+  	PluginManager.register("MBS_MobileDirPad", 1.1, "Shows a DirPad and action buttons when using mobile devices", {  
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
