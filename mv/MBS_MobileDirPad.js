@@ -290,9 +290,11 @@ MBS.MobileDirPad = {};
 		return Utils.isMobileDevice() || $.Param.pcDebug;
 	};
 
+	Scene_Base.dirpad = true;
+
 	Scene_Base.prototype.start = function() {
 	    Scene_Base_start.apply(this, arguments);
-	    Scene_Base.dirpad = this.isMobileDevice();
+	    Scene_Base.dirpad = Scene_Base.dirpad && this.isMobileDevice();
 
 	    this.createDirPad();
 	    this.createActionButtons();
