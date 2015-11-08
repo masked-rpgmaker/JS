@@ -1,7 +1,7 @@
 //=============================================================================
 // MBS - DLC (v0.1)
 //-----------------------------------------------------------------------------
-// por Masked
+// by Masked
 //=============================================================================
 //-----------------------------------------------------------------------------
 // Especificações do plugin (Não modifique!)
@@ -17,6 +17,31 @@
 	===========================================================================
 	Introduction
 	===========================================================================
+	This plugin allows you to create DLC packages for your game in a simple 
+	way.
+
+	===========================================================================
+	How to use
+	===========================================================================
+	Make your game as you would usually do, when you are done just add the 
+	files you want to be replaced when the DLC is used into a .zip file. 
+	Don't forget to put everything in the right directories.
+
+	If you wanted to replace the Map 3, for example, you'd copy the 
+	data/Map003.json file from your game and paste it in the .zip 'data/' 
+	folder.
+	
+	If you want you can also create a info.json file in the .zip root directory
+	so you can read its information from inside the game using the DLC .info
+	property.
+
+	To use the DLC, just put the .zip file in your game's ./dlc/ folder, and
+	then the images, audio and data from the DLC will replace the game's ones.
+
+	===========================================================================
+	Credits
+	===========================================================================
+	- Masked, for creating
 
 	@param DLC Folder
 	@desc The folder where the DLC .zip files will be placed
@@ -58,7 +83,15 @@ MBS.DLC = {};
 
 	DLC.prototype.initialize = function (zip) {
 		this._src = zip;
-		DLC.list.push(this);
+		DLC.list.unshift(this);
+	};
+
+	DLC.loadGameFile = function (name, callback) {
+		for (var i = 0; i < DLC.list.length; i++) {
+			if (DLC.list[i].fileExists(name))
+				return callback(DLC.list[i], name);
+		}
+		return null;
 	};
 
 	Object.defineProperty(DLC.prototype, "info", {
@@ -102,6 +135,7 @@ MBS.DLC = {};
 	};
 
 	DLC.prototype.loadAudio = function (name) {
+
 		var fs = require('fs');
 		var pn = $.dlcPath + "/tmp/%1/".format(this.info.name)
 		if (!fs.existsSync(pn)) {
@@ -112,8 +146,12 @@ MBS.DLC = {};
 		var fn = pn + ".mbsdlc.audio%1.temp".format(Math.random() * 0xFFFFFFFF);
 
 		fs.writeFileSync(fn, this.loadNormalFile(name).asBinary(), 'binary');
-
-		return new WebAudio(fn);
+		if (AudioManager.shouldUseHtml5Audio() && name.contains('/bgm/')) {
+			Html5Audio.setup(fn);
+			return Html5Audio;
+		}
+		else
+			return new WebAudio(fn);
 	};
 
 	//------------------------------------------------------------------------
@@ -175,13 +213,17 @@ MBS.DLC = {};
 	var DataManager_loadDataFile = DataManager.loadDataFile;
 
 	DataManager.loadDataFile = function(name, src) {
-	    DataManager_loadDataFile.apply(this, arguments);
-	    DLC.list.forEach(function(dlc) {
-	    	if (dlc.fileExists("data/" + src)) {
-	    		window[name] = dlc.loadData("data/" + src);
-	    		DataManager.onLoad(window[name]);
-	    	}
+	    var data;
+
+	    data = DLC.loadGameFile("data/" + src, function(dlc, name) {
+	    	return dlc.loadData(name);
 	    });
+
+	    if (data) {
+	    	window[name] = data;
+	    	DataManager.onLoad(data);
+	    } else
+	    	DataManager_loadDataFile.apply(this, arguments);
 	};
 
 	//------------------------------------------------------------------------
@@ -195,21 +237,40 @@ MBS.DLC = {};
 	    var key = path + ':' + hue;
 	   	if (bitmap) return bitmap;
 	    if (!this._cache[key]) {
-	    	var bitmap;
-	    	DLC.list.forEach(function (dlc) {
-	    		console.log(dlc);
-	    		if (dlc.fileExists(path)) {
-	    			bitmap = dlc.loadImage(path);
-	    			bitmap.smooth = false;
-	    			bitmap.addLoadListener(function() {
-			            bitmap.rotateHue(hue);
-			        });
-	    		}
+
+	    	var bitmap = DLC.loadGameFile(path, function (dlc, name) {
+	    		var b = dlc.loadImage(path);
+	    		b.smooth = false;
+	    		b.addLoadListener(function() {
+			        b.rotateHue(hue);
+			    });
+			    return b;
 	    	});
 
 	        this._cache[key] = bitmap || ImageManager_loadNormalBitmap.apply(this, arguments);
 	    }
 	    return this._cache[key];
+	};
+
+	//------------------------------------------------------------------------
+	// AudioManager
+	//
+	// Module for controling the game audio
+
+	var AudioManager_createBuffer = AudioManager.createBuffer;
+
+	AudioManager.createBuffer = function(folder, name) {
+	    var ext = this.audioFileExt();
+	    var url = this._path + folder + '/' + encodeURIComponent(name) + ext;
+
+	    var audio = DLC.loadGameFile(url, function (dlc, name) {
+	    	return dlc.loadAudio(name);
+	    });
+
+	    if (audio)
+	    	return audio;
+
+	    return AudioManager_createBuffer.apply(this, arguments);
 	};
 
 	//------------------------------------------------------------------------
