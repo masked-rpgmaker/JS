@@ -31,9 +31,18 @@
 	data/Map003.json file from your game and paste it in the .zip 'data/' 
 	folder.
 	
-	If you want you can also create a info.json file in the .zip root directory
-	so you can read its information from inside the game using the DLC .info
-	property.
+	You also need to create a info.json file in the .zip root directory	so you 
+	can read its information from inside the game using the DLC .info property.
+	It's necessary to define a "name" property in the info file, otherwise your
+	DLC resources will be placed at the common folder and that may cause 
+	incompatibility. Sample info.json file:
+
+	{
+		"name":   "Sample DLC name",
+		"desc":   "A sample DLC.",
+		"author": "Masked",
+		"version": 1.0
+	}
 
 	To use the DLC, just put the .zip file in your game's ./dlc/ folder, and
 	then the images, audio and data from the DLC will replace the game's ones.
@@ -45,6 +54,54 @@
 
 	@param DLC Folder
 	@desc The folder where the DLC .zip files will be placed
+	@default ./dlc/
+*/
+/*:pt
+	@author Masked
+	@plugindesc Implementa um sistema de DLC que carrega recursos (imagens e 
+	audio) e dados de um arquivo .zip e usa no jogo.
+	<MBS DLC>
+
+	@help
+	===========================================================================
+	Introdução
+	===========================================================================
+	Esse plugin permite que você empacote recursos e dados dentro de um arquivo
+	ZIP e substitua os existentes no jogo colocando o arquivo numa pasta de 
+	onde é carregado automaticamente.
+
+	===========================================================================
+	Como usar
+	===========================================================================
+	Faça seu jogo como faria normalmente, fazendo as alterações que quiser que 
+	a DLC faça.
+	Depois, adicione todos os arquivos que foram alterados e todos que forem 
+	necessários para o funcionamento da DLC e que não estejam no jogo por 
+	padrão em suas respectivas pastas dentro de um arquivo .zip.
+	
+	Depois é só criar um arquivo info.json na pasta raíz do ZIP com as 
+	informações da DLC, é necessário definir uma propriedade "name" ou os 
+	arquivos extraídos dela serão salvos na pasta 'Common'. 
+	Exemplo de info.json:
+
+	{
+		"name":   "Nome da DLC",
+		"desc":   "Uma DLC de exemplo.",
+		"author": "Masked",
+		"version": 1.0
+	}
+
+	Para usar a DLC, só ponha o .zip na pasta /dlc/ do seu jogo e aí os arquivos
+	de imagem, audio e dados do jogo serão substituidos pelos da DLC sempre que
+	possível.
+
+	===========================================================================
+	Créditos
+	===========================================================================
+	- Masked, por criar
+
+	@param DLC Folder
+	@desc A pasta onde as DLCs serão colocadas.
 	@default ./dlc/
 */
 
@@ -96,7 +153,9 @@ MBS.DLC = {};
 
 	Object.defineProperty(DLC.prototype, "info", {
 		get: function() {
-			return JSON.parse(this._src.file("info.json").asText());
+			if (this.fileExists("info.json"))
+				return JSON.parse(this._src.file("info.json").asText());
+			return { "name": "Common" };
 		}
 	});
 
