@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Map Zoom
+// MBS - Map Zoom (v1.2.3)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -198,15 +198,14 @@ MBS.MapZoom = {};
   Game_Map.prototype.update = function () {
   	_GameMap_update.apply(this, arguments);
   	if (Game_Map._zoomDuration > Game_Map._zoomTime) {
-	  Game_Map._zoom.x += Game_Map._spdZoom.x;
-	  Game_Map._zoom.y += Game_Map._spdZoom.y;
-      Game_Map._zoomDuration--;
-      this.onZoomChange();
-	} if (Game_Map._zoomTime > 0) {
-      Game_Map._zoom = Game_Map._destZoom;
-      Game_Map._zoomTime = 0;
-      Game_Map._zoomDuration = 0;
-      Game_Map._spdZoom = new Point(0, 0);
+	    Game_Map.zoom.x += Game_Map._spdZoom.x;
+	    Game_Map.zoom.y += Game_Map._spdZoom.y;
+        Game_Map._zoomTime++;
+        this.onZoomChange();
+	} else if (Game_Map._zoomTime > 0) {
+        Game_Map._zoomTime = 0;
+        Game_Map._zoomDuration = 0;
+        Game_Map._spdZoom = new Point(0, 0);
     }
   };
 
@@ -215,13 +214,14 @@ MBS.MapZoom = {};
    */
   Game_Map.prototype.setZoom = function(x, y, duration) {
   	duration = duration || 60;
-  	duration = Math.round(duration <= 0 ? 1 : duration);
+  	duration = Math.round(duration <= 0 ? 1 : duration) * 1.0;
   	Game_Map._destZoom.x = Game_Map._destZoom.y = x;
   	if (y) {
   		Game_Map._destZoom.y = y;
   	}
   	Game_Map._spdZoom = new PIXI.Point((Game_Map._destZoom.x - Game_Map._zoom.x) / duration, (Game_Map._destZoom.y - Game_Map._zoom.y) / duration);
   	Game_Map._zoomDuration = duration;
+    Game_Map._zoomTime = 0;
   };
 
   Game_Map.prototype.setZoomCenter = function(a, b) {
@@ -346,13 +346,18 @@ MBS.MapZoom = {};
     this.y = Math.round(-Game_Map.zoom.y * (scale.x - 1));
     this.x += Math.round(screen.shake());
     if (this.scale.x !== scale.x || this.scale.y !== scale.y) {
-        var w = ($gameMap.width() + 4) * $gameMap.tileWidth() + this._tilemap._margin * 2;
-        var h = ($gameMap.height() + 3) * $gameMap.tileHeight() + this._tilemap._margin * 2;
-        var r = w > this._tilemap.width || h > this._tilemap.height;
-        if (r) {
-            this._tilemap.width = w;
-            this._tilemap.height = h;
-            this._tilemap.refresh();
+        var dscale = Game_Map._destZoom;
+        var sw = Graphics.width / dscale.x + this._tilemap._margin * 2;
+        var sh = Graphics.height / dscale.y + this._tilemap._margin * 2;
+        if ((this.scale.x > dscale.x || this.scale.y > dscale.y) && !(this.width === sw && this.height === sh)) {
+            var w = ($gameMap.width() + 4) * $gameMap.tileWidth() + this._tilemap._margin * 2;
+            var h = ($gameMap.height() + 3) * $gameMap.tileHeight() + this._tilemap._margin * 2;
+            var r = w > this._tilemap.width || h > this._tilemap.height;
+            if (r) {
+                this._tilemap.width = Math.min(w, sw);
+                this._tilemap.height = Math.min(h, sh);
+                this._tilemap.refresh();
+            }
         }
         this.scale = scale.clone();
         this._parallax.move(this._parallax.x, this._parallax.y, Graphics.width / scale.x, Graphics.height / scale.y);
@@ -481,10 +486,10 @@ MBS.MapZoom = {};
   	  } else if (args[0] == "reset") {
   	  	if (args[1]) {
   	  		$gameMap.setZoom(1.0, 1.0, Number(args[1]));
-  	  		$gameMap.setZoomCenter();
   	  	} else {
   	  		$gameMap.setZoom(1.0);
   	  	}
+        $gameMap.setZoomCenter();
   	  } else if (args[0] == "center") {
   	  	if (args[1] == "event") {
   	  		var ev = $gameMap.event(Number(args[2]));
@@ -495,6 +500,7 @@ MBS.MapZoom = {};
   	  	} else {
   	  		$gameMap.setZoomCenter(Number(args[1]), Number(args[2]));
   	  	}
+        $gameMap.setZoom(Game_Map._destZoom.x, Game_Map._destZoom.y, Game_Map._zoomDuration - Game_Map._spdZoom);
   	  }
   	}
   };
