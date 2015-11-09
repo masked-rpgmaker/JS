@@ -372,8 +372,10 @@ MBS.DLC = {};
 
 MBS.DLC.loadAll();
 
+Imported["MBS_DLC"] = 0.1
+
 if (Imported["MBS_DLC"]) {
-  PluginManager.register("MBS_DLC", 1.0, "Implements a DLC system that uses .zip files.", {  
+  PluginManager.register("MBS_DLC", 0.1, "Implements a DLC system that uses .zip files.", {  
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
