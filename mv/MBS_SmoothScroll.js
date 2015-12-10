@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Smooth Scroll
+// MBS - Smooth Scroll (v1.0.2)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -51,13 +51,18 @@ MBS.SmoothScroll = {};
 	$.Param.speed = Number($.Parameters["Scroll Speed"]);
 	$.Param.margin = Number($.Parameters["Scroll Margin"]);
 
+	$.enabled = true;
+
 	//-------------------------------------------------------------------------
 	// Game_Map
 	// 
 
+	var Game_Map_displayX = Game_Map.prototype.displayX;
+	var Game_Map_displayY = Game_Map.prototype.displayY;
+
 	Game_Map.prototype.setupScroll = function() {
 	    this._scroll = {
-	    	0: {distance: 0, speed: 4},
+	    	0: {direction: 0, distance: 0, speed: 4},
 	    	2: {distance: 0, speed: 0}, 
 	    	4: {distance: 0, speed: 0},
 	    	6: {distance: 0, speed: 0},
@@ -65,7 +70,7 @@ MBS.SmoothScroll = {};
 	    };
 	};
 
-	Game_Map.prototype.startScroll = function(direction, distance, speed) {
+	Game_Map.prototype.applyScroll = function(direction, distance, speed) {
 		if (direction == 2) {
 			this._scroll[8] = {distance: 0, speed: 0};
 		} else if (direction == 4) {
@@ -78,18 +83,33 @@ MBS.SmoothScroll = {};
 	    this._scroll[direction] = {distance: distance, speed: speed};
 	};
 
+	Game_Map.prototype.startScroll = function(direction, distance, speed) {
+	    this._scroll[0] = {direction: direction, distance: distance, speed: speed};
+	};
+
 	Game_Map.prototype.updateScroll = function() {
-		for (var i = 2; i < 10; i += 2) {
-			if (this._scroll[i].distance > 0) {
-			    var lastX = this._displayX;
-			    var lastY = this._displayY;
-			    this.doScroll(i, this.scrollDistance(i));
-			    if (this._displayX === lastX && this._displayY === lastY) {
-			        this._scroll[i] = {distance: 0, speed: 0};
-			    } else {
-			        this._scroll[i].distance -= this.scrollDistance(i);
-			    }
+		if (this._scroll[0].distance == 0) {
+			for (var i = 2; i < 10; i += 2) {
+				if (this._scroll[i].distance > 0) {
+				    var lastX = this._displayX;
+				    var lastY = this._displayY;
+				    this.doScroll(i, this.scrollDistance(i));
+				    if (this._displayX === lastX && this._displayY === lastY) {
+				        this._scroll[i] = {distance: 0, speed: 0};
+				    } else {
+				        this._scroll[i].distance -= this.scrollDistance(i);
+				    }
+				}
 			}
+		} else {
+			var lastX = this._displayX;
+		    var lastY = this._displayY;
+		    this.doScroll(this._scroll[0].direction, this.scrollDistance(0));
+		    if (this._displayX === lastX && this._displayY === lastY) {
+		        this._scroll[0] = {direction: 0, distance: 0, speed: 0};
+		    } else {
+		        this._scroll[0].distance -= this.scrollDistance(i);
+		    }
 		}
 	};
 
@@ -103,49 +123,74 @@ MBS.SmoothScroll = {};
 	// Game_Player
 	// 
 
+	var Game_Player_updateScroll = Game_Player.prototype.updateScroll;
+
 	Game_Player.prototype.scrollSpeed = function(distance) {
 		return $.Param.speed * distance / $.Param.margin * 2.0;
 	};
 
 	Game_Player.prototype.updateScroll = function(lastScrolledX, lastScrolledY) {
+		if (!$.enabled) return Game_Player_updateScroll.apply(this, arguments);
+
 	    var x1 = lastScrolledX;
 	    var y1 = lastScrolledY;
 	    var x2 = this.scrolledX();
 	    var y2 = this.scrolledY();
 	    var d;
-	    if (y2 - this.centerY() > 0.1) {
+	    if (y2 > y1 && y2 - this.centerY() > 0.1) {
 	    	d = y2 - this.centerY();
 	    	e = d * $gameMap.tileHeight();
 	    	if (e >= $.Param.margin)
-	        	$gameMap.startScroll(2, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
+	        	$gameMap.applyScroll(2, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
 	        else
-	        	$gameMap.startScroll(2, d, this.scrollSpeed(e));
+	        	$gameMap.applyScroll(2, d, this.scrollSpeed(e));
 	    }
-	    if (x2 - this.centerX() < -0.1) {
+	    if (x2 < x1 && x2 - this.centerX() < -0.1) {
 	    	d = this.centerX() - x2;
 	    	e = d * $gameMap.tileWidth();
 	        if (e >= $.Param.margin)
-	        	$gameMap.startScroll(4, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
+	        	$gameMap.applyScroll(4, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
 	        else
-	        	$gameMap.startScroll(4, d, this.scrollSpeed(e));
+	        	$gameMap.applyScroll(4, d, this.scrollSpeed(e));
 	    }
-	    if (x2 - this.centerX() > 0.1) {
+	    if (x2 > x1 && x2 - this.centerX() > 0.1) {
 	    	d = x2 - this.centerX();
 	    	e = d * $gameMap.tileWidth();
 	        if (e >= $.Param.margin)
-	        	$gameMap.startScroll(6, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
+	        	$gameMap.applyScroll(6, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
 	        else
-	        	$gameMap.startScroll(6, d, this.scrollSpeed(e));
+	        	$gameMap.applyScroll(6, d, this.scrollSpeed(e));
 	    }
-	    if (y2 - this.centerY() < -0.1) {
+	    if (y2 < y1 && y2 - this.centerY() < -0.1) {
 	    	d = this.centerY() - y2;
 	    	e = d * $gameMap.tileHeight();
 	        if (e >= $.Param.margin)
-	        	$gameMap.startScroll(8, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
+	        	$gameMap.applyScroll(8, $gamePlayer.distancePerFrame(), $gamePlayer.realMoveSpeed());
 	        else
-	        	$gameMap.startScroll(8, d, this.scrollSpeed(e));
+	        	$gameMap.applyScroll(8, d, this.scrollSpeed(e));
 	    }
 	};
+
+	//-----------------------------------------------------------------------------
+	// Plugin command
+	//
+
+	// Alias
+	var _GameInterpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+
+	/**
+	* Comando de plugin
+	*/
+	Game_Interpreter.prototype.pluginCommand = function (command, args) {
+		_GameInterpreter_pluginCommand.call(this, command, args);
+		if (command == "SmoothScroll") {
+			if (args[0] == "enable")
+				$.enabled = true;
+			else if (args[0] == "disable")
+				$.enabled = false;
+		}
+
+	}
 
 })(MBS.SmoothScroll);
 
