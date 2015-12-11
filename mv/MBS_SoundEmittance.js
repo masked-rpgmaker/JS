@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Sound Emittance (v1.0.0)
+// MBS - Sound Emittance (v1.0.1)
 //-----------------------------------------------------------------------------
 // by Masked
 //=============================================================================
@@ -84,12 +84,6 @@ MBS.SoundEmittance = {};
 	$.Parameters = $plugins.filter(function(p) {return p.description.contains('<MBS SEmittance>');})[0].parameters;
  	$.Param = $.Param || {};
 
- 	//-----------------------------------------------------------------------------
-	// Settings
-	//
-
-	// None \o/
-
 	//-----------------------------------------------------------------------------
 	// WebAudio
 	//
@@ -106,6 +100,8 @@ MBS.SoundEmittance = {};
 		set: function(value) {
 			this._position = value;
 			WebAudio._context.listener.setPosition($gamePlayer._realX, $gamePlayer._realY, 0);
+			if (this._pannerNode)
+	        	this._pannerNode.setOrientation($gamePlayer._realX, $gamePlayer._realY, 0);
 		}
 	});
 
@@ -120,6 +116,7 @@ MBS.SoundEmittance = {};
 	// > Changed almost everything here
 	WebAudio.prototype._updatePanner = function() {
 	    if (this._pannerNode) {
+	    	this._pannerNode.distanceModel = "linear";
 	        this._pannerNode.setPosition(this._position[0] || 0, this._position[1] || 0, this._position[2] || 0);
 	    }
 	};
@@ -170,10 +167,10 @@ MBS.SoundEmittance = {};
 	Game_Event.prototype.updateSEmittance = function() {
 		if (this._sEmittance && this._sEmittance.isReady()) {
 			this._sEmittance.position = [this._realX, this._realY];
-			var vol = (this._sEmittanceRadius - Math.hypot(Math.abs(this._realX - $gamePlayer._realX), Math.abs(this._realY - $gamePlayer._realY)))/this._sEmittanceRadius;
-			this._sEmittance.volume = vol > 0 ? vol : 0;
-			if (!this._sEmittance.isPlaying())
+			if (!this._sEmittance.isPlaying()) {
 				this._sEmittance.play(true, 0);
+			}
+			this._sEmittance._pannerNode.maxDistance = this._sEmittanceRadius || 1;
 		}
 	};
 
