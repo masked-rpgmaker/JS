@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Sound Emittance (v1.0.1)
+// MBS - Sound Emittance (v1.1.0)
 //-----------------------------------------------------------------------------
 // by Masked
 //=============================================================================
@@ -36,6 +36,14 @@ And to set the emittance radius:
 E.g.:
 <s_e_radius: 3>
 
+You can also set the sound volume and pitch by adding the following notes:
+<s_e_volume: N>
+<s_e_pitch: N>
+
+E.g.:
+<s_e_volume: 90>
+<s_e_pitch: 50>
+
 The radius is measured in tiles (48x48 px), it's possible to use float 
 values. If no radius is given, it will be assumed it's 1.
 */
@@ -68,6 +76,14 @@ E para definir o raio de alcance do som:
 Ex.:
 <s_e_radius: 3>
 
+Para definir o volume e frequência (pitch) do som:
+<s_e_volume: N>
+<s_e_pitch: N>
+
+Ex.:
+<s_e_volume: 90>
+<s_e_pitch: 50>
+
 O raio é medido em tiles, você pode usar valores decimais se quiser, se 
 não for definido um raio, ele será 1.
 */
@@ -99,9 +115,10 @@ MBS.SoundEmittance = {};
 		},
 		set: function(value) {
 			this._position = value;
-			WebAudio._context.listener.setPosition($gamePlayer._realX, $gamePlayer._realY, 0);
 			if (this._pannerNode)
-	        	this._pannerNode.setOrientation($gamePlayer._realX, $gamePlayer._realY, 0);
+	        	this._pannerNode.setPosition(this._position[0] || 0, this._position[2] || 0, this._position[1] || 0);
+	    	if (WebAudio._context && WebAudio._context.listener)
+				WebAudio._context.listener.setPosition($gamePlayer._realX, 0, $gamePlayer._realY);
 		}
 	});
 
@@ -116,8 +133,9 @@ MBS.SoundEmittance = {};
 	// > Changed almost everything here
 	WebAudio.prototype._updatePanner = function() {
 	    if (this._pannerNode) {
-	    	this._pannerNode.distanceModel = "linear";
-	        this._pannerNode.setPosition(this._position[0] || 0, this._position[1] || 0, this._position[2] || 0);
+	    	this._pannerNode.distanceModel = 'linear';
+	    	this._pannerNode.panningModel = 'HRTF';
+	    	this._pannerNode.setOrientation(0,0,0);
 	    }
 	};
 
@@ -140,6 +158,9 @@ MBS.SoundEmittance = {};
 	Game_Event.prototype.setupSEmittance = function() {
 		if (this._sEmittance)
 			this._sEmittance.stop();
+
+		if (!this.page()) return;
+
 		var list = this.list();
 
 		var comments = "";
@@ -148,12 +169,22 @@ MBS.SoundEmittance = {};
 				comments += command.parameters[0] + "\n";
 			}
 		});
+
 		var filename = (/\s*<\s*s_emittance\s*:\s*(.+)\s*>\s*/i.exec(comments) || [])[1];
 		if (filename != undefined) {
 			this._sEmittance = new WebAudio("audio/" + filename + AudioManager.audioFileExt());
 		}
+
 		var radius = (/\s*<\s*s_e_radius\s*:\s*(\d+(\.\d+)?)\s*>\s*/i.exec(comments) || [])[1];
 		this._sEmittanceRadius = radius || 1;
+
+		var volume = (/\s*<\s*s_e_volume\s*:\s*(\d+)\s*>\s*/i.exec(comments) || [])[1];
+		if (volume && this._sEmittance)
+			this._sEmittance.volume = volume / 100;
+
+		var pitch = (/\s*<\s*s_e_pitch\s*:\s*(\d+)\s*>\s*/i.exec(comments) || [])[1];
+		if (pitch && this._sEmittance)
+			this._sEmittance.pitch = pitch / 100;
 	};
 
 	// Event update process
@@ -166,11 +197,11 @@ MBS.SoundEmittance = {};
 	// Updates the sound emittance as needed
 	Game_Event.prototype.updateSEmittance = function() {
 		if (this._sEmittance && this._sEmittance.isReady()) {
-			this._sEmittance.position = [this._realX, this._realY];
 			if (!this._sEmittance.isPlaying()) {
 				this._sEmittance.play(true, 0);
+				this._sEmittance._pannerNode.maxDistance = this._sEmittanceRadius || 1;
 			}
-			this._sEmittance._pannerNode.maxDistance = this._sEmittanceRadius || 1;
+			this._sEmittance.position = [this._realX, this._realY];
 		}
 	};
 
