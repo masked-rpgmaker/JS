@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Sound Emittance (v1.1.0)
+// MBS - Sound Emittance (v1.1.1)
 //-----------------------------------------------------------------------------
 // by Masked
 //=============================================================================
@@ -9,9 +9,16 @@
 //
 /*:
 @author Masked
+
 @plugindesc Allows you to set an sound emittance for events with 3d positioning
 and distance.
 <MBS SEmittance>
+
+@param Use HRTF
+@desc Choose whether to use HRTF panning model for the 3D  sound positioning
+or not (RPG Maker uses equalpower by default).
+@default true
+
 @help
 ===========================================================================
 Introduction
@@ -46,12 +53,20 @@ E.g.:
 
 The radius is measured in tiles (48x48 px), it's possible to use float 
 values. If no radius is given, it will be assumed it's 1.
+
 */
 /*:pt
 @author Masked
+
 @plugindesc Permite definir uma emissão de som para eventos com posição e 
 distância.
 <MBS SEmittance>
+
+@param Use HRTF
+@desc Determina quando usar HRTF para o posicionamento 3D do som ou não.
+(O RPG Maker usa equalpower por padrão).
+@default true
+
 @help
 ===========================================================================
 Introdução
@@ -97,8 +112,29 @@ MBS.SoundEmittance = {};
 
 (function ($) {
 
+	var fs = require('fs');
+
 	$.Parameters = $plugins.filter(function(p) {return p.description.contains('<MBS SEmittance>');})[0].parameters;
  	$.Param = $.Param || {};
+
+ 	//-----------------------------------------------------------------------------
+	// Settings
+	//
+
+	$.Param.useHRTF = !!$.Parameters['Use HRTF'].match(/true/i);
+
+ 	//-----------------------------------------------------------------------------
+	// Module Functions
+	//
+
+	function audioFilename(filename) {
+		var ext = AudioManager.audioFileExt();
+
+		if (fs.existsSync(window.location.pathname.replace(/\/[^/]*$/, '/').substring(1) + filename + ext))
+			return filename + ext;
+		return filename + '.m4a';
+	}
+
 
 	//-----------------------------------------------------------------------------
 	// WebAudio
@@ -134,7 +170,8 @@ MBS.SoundEmittance = {};
 	WebAudio.prototype._updatePanner = function() {
 	    if (this._pannerNode) {
 	    	this._pannerNode.distanceModel = 'linear';
-	    	this._pannerNode.panningModel = 'HRTF';
+	    	if ($.Param.useHRTF)
+	    		this._pannerNode.panningModel = 'HRTF';
 	    	this._pannerNode.setOrientation(0,0,0);
 	    }
 	};
@@ -171,9 +208,8 @@ MBS.SoundEmittance = {};
 		});
 
 		var filename = (/\s*<\s*s_emittance\s*:\s*(.+)\s*>\s*/i.exec(comments) || [])[1];
-		if (filename != undefined) {
-			this._sEmittance = new WebAudio("audio/" + filename + AudioManager.audioFileExt());
-		}
+		if (filename != undefined)
+			this._sEmittance = new WebAudio(audioFilename(AudioManager._path + filename));
 
 		var radius = (/\s*<\s*s_e_radius\s*:\s*(\d+(\.\d+)?)\s*>\s*/i.exec(comments) || [])[1];
 		this._sEmittanceRadius = radius || 1;
