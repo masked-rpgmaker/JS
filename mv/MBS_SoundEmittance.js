@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Sound Emittance (v1.1.1)
+// MBS - Sound Emittance (v1.1.2)
 //-----------------------------------------------------------------------------
 // by Masked
 //=============================================================================
@@ -239,6 +239,25 @@ MBS.SoundEmittance = {};
 			}
 			this._sEmittance.position = [this._realX, this._realY];
 		}
+	};
+
+	// Stops the sound emittance
+	Game_Event.prototype.stopSEmittance = function() {
+		if (this._sEmittance)
+			this._sEmittance.stop();
+	};
+
+	//-----------------------------------------------------------------------------
+	// Game_Map
+	//
+
+	var Game_Map_setupEvents = Game_Map.prototype.setupEvents;
+	
+	Game_Map.prototype.setupEvents = function() {
+		this._events.forEach(function (event) {
+			event.stopSEmittance();
+		});
+	    Game_Map_setupEvents.apply(this, arguments);
 	};
 
 })(MBS.SoundEmittance);
