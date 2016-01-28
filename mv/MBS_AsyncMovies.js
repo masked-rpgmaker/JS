@@ -113,11 +113,15 @@ MBS.AsyncMovies = {};
 					(lastCommand.code == 108 || lastCommand.code == 408) && 
 					!!lastCommand.parameters[0].match(/<AsyncVideo>/i)) {
 					MBS.AsyncMovies.play(this._params[0]);
+					if (MBS.AsyncMovies._switch)
+						$gameSwitches.setValue(MBS.AsyncMovies._switch, false);
 				} else {
 				    this.alias_command261();
 				}
 			} else {
 				MBS.AsyncMovies.stop();
+				if (MBS.AsyncMovies._switch)
+					$gameSwitches.setValue(MBS.AsyncMovies._switch, true);
 				this.setWaitMode('message');
 			}
 			this._index++;
