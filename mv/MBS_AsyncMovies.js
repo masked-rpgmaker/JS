@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Asynchronous Movies (v1.1)
+// MBS - Asynchronous Movies (v1.0.2)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -114,7 +114,7 @@ MBS.AsyncMovies = {};
 					(!!lastCommand.parameters[0].match(/<AsyncVideo>/i) || 
 						!!lastCommand.parameters[0].match(/<AsyncVideo\s*:\s*(\d+)>/i))) {
 					if (!!lastCommand.parameters[0].match(/<AsyncVideo\s*:\s*(\d+)>/i))
-						MBS.AsyncMovies._switch = parseInt((/<AsyncVideo\s*:\s*(\d+)>/i).exec(lastCommand.parameters[0])[0]);
+						MBS.AsyncMovies._switch = parseInt((/<AsyncVideo\s*:\s*(\d+)>/i).exec(lastCommand.parameters[0])[1]);
 					MBS.AsyncMovies.play(this._params[0]);
 					if (MBS.AsyncMovies._switch)
 						$gameSwitches.setValue(MBS.AsyncMovies._switch, false);
