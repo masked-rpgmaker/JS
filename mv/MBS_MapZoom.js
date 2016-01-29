@@ -474,15 +474,15 @@ MBS.MapZoom = {};
   	  	  if (args[2]) {
   	  	  	if (args[2] == "duration") {
   	  	  		if (args[3]) {
-  	  	  			$gameMap.setZoom(Number(args[1]), Number(args[1]), Number(args[3]));
+  	  	  			$gameMap.setZoom(Number(args[1]) * $.Param.defaultZoom, Number(args[1]) * $.Param.defaultZoom, Number(args[3]));
   	  	  		}
   	  	  	} else {
   	  	  		if (args[3] == "duration") {
   	  	  			if (args[4]) {
-  	  	  				$gameMap.setZoom(Number(args[1]), Number(args[2]), Number(args[4]));
+  	  	  				$gameMap.setZoom(Number(args[1]) * $.Param.defaultZoom, Number(args[2]) * $.Param.defaultZoom, Number(args[4]));
   	  	  			}
   	  	  		} else {
-  	  	  			$gameMap.setZoom(Number(args[1]), Number(args[2]));
+  	  	  			$gameMap.setZoom(Number(args[1]) * $.Param.defaultZoom, Number(args[2]) * $.Param.defaultZoom);
   	  	  		}
   	  	  	}
   	  	  } else {
