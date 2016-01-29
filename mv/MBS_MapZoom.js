@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Map Zoom (v1.2.4)
+// MBS - Map Zoom (v1.3.0)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -73,7 +73,13 @@
  * @desc If you want the zoom to be reset when the map changes, set this 
  * parameter to true. Set it to false otherwise.
  * @default true
-*/
+ *
+ * @param Default zoom
+ * @desc The default zoom ratio, change this to apply a zoom to all of the game
+ * maps.
+ * @default 1.0
+ *
+ */
 /*:pt
  *
  * @author Masked
@@ -143,6 +149,12 @@
  * @desc Caso queira que o zoom seja resetado quando o mapa mudar, deixe 
  * como true. Se não, deixe como false.
  * @default true
+ *
+ * @param Default zoom
+ * @desc Valor padrão para o zoom da tela. Mude isso para aplicar um zoom a 
+ * todos os mapas do jogo.
+ * @default 1.0
+ *
  */
 
 var Imported = Imported || {};
@@ -164,6 +176,9 @@ MBS.MapZoom = {};
   // Flag to enable/disable resetting the zoom on map change
   $.Param.resetOnMapChange = ($.Parameters["Reset on map change"].toLowerCase() === "true");
 
+  // Default zoom ratio
+  $.Param.defaultZoom = Number($.Parameters["Default zoom"]);
+
   //-----------------------------------------------------------------------------
   // Game_Map
   //
@@ -181,7 +196,7 @@ MBS.MapZoom = {};
     this._destZoom = this._destZoom || new PIXI.Point(0, 0);
     this._zoomTime = 0;
     this._zoomDuration = this._zoomDuration || 0;
-    this._zoom = this._zoom || new PIXI.Point(1.0, 1.0);
+    this._zoom = this._zoom || new PIXI.Point($.Param.defaultZoom, $.Param.defaultZoom);
     this._zoomCenter = null;
   };
 
@@ -189,7 +204,7 @@ MBS.MapZoom = {};
   Game_Map.prototype.setup = function(mapId) {
     _GameMap_setup.call(this, mapId);
     if ($.Param.resetOnMapChange)
-    	this._zoom = new PIXI.Point(1.0, 1.0);
+    	this._zoom = new PIXI.Point($.Param.defaultZoom, $.Param.defaultZoom);
   };
 
   // Map update. This method controls the gradual zoom when a duration 
@@ -476,9 +491,9 @@ MBS.MapZoom = {};
   	  	}
   	  } else if (args[0] == "reset") {
   	  	if (args[1]) {
-  	  		$gameMap.setZoom(1.0, 1.0, Number(args[1]));
+  	  		$gameMap.setZoom($.Param.defaultZoom, $.Param.defaultZoom, Number(args[1]));
   	  	} else {
-  	  		$gameMap.setZoom(1.0);
+  	  		$gameMap.setZoom($.Param.defaultZoom);
   	  	}
         $gameMap.setZoomCenter();
   	  } else if (args[0] == "center") {
@@ -503,5 +518,5 @@ if (Imported["MVCommons"]) {
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
-    }, "29-01-2016");
+    }, "29-10-2015");
 }
