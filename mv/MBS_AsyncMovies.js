@@ -1,11 +1,55 @@
 //=============================================================================
 // MBS - Asynchronous Movies (v1.0.2)
 //-----------------------------------------------------------------------------
-// por Masked
+// by Masked
 //=============================================================================
 //-----------------------------------------------------------------------------
 // Especificações do plugin (Não modifique!)
 // Plugin specifications (Do not modify!)
+/*:
+	@author Masked 
+	@plugindesc Allows you to play videos asynchronously in-game.
+	<MBS AsyncMovies>
+
+	@help
+===========================================================================
+Introduction
+===========================================================================
+This plugin makes it possible to play videos in-game and still run events,
+this way you can still control the game behavior while the player watches 
+the video.
+
+===========================================================================
+How to Use
+===========================================================================
+To play a movie asynchronously, put a comment like this immediattely above
+the "Play Movie" command in an event:
+	<AsyncVideo>
+
+If you want the video to activate a switch when it's finished, change the
+comment to something like this:
+	<AsyncVideo: id>
+
+This way, the switch with ID 'id' will be turned off when the movie starts 
+and on by its end.
+To stop the movie, just call the Play Movie command and choose 'None'.
+
+===========================================================================
+Functions
+===========================================================================
+
+MBS.AsyncMovies.play(filename)   : Plays a movie from the file 
+                                 : 'movies/filename.ext', being 'ext' the
+                                 : supported video extension.
+ 
+MBS.AsyncMovies.stop			 : Stops the current video from running
+
+===========================================================================
+Credits
+===========================================================================
+- Masked, for creating
+
+*/
 /*:pt
 	@author Masked 
 	@plugindesc Permite a execução de vídeos de modo paralelo ao resto do jogo.
@@ -44,6 +88,11 @@ MBS.AsyncMovies.play(filename)   : Roda um vídeo do arquivo 'filename' em
  
 MBS.AsyncMovies.stop			 : Para a execução do vídeo atual
 
+===========================================================================
+Créditos e agradecimentos
+===========================================================================
+- Masked, por criar
+
 */
 
 var Imported = Imported || {};
@@ -56,7 +105,7 @@ MBS.AsyncMovies = {};
 //=============================================================================
 // ** MBS > AsyncMovies
 //-----------------------------------------------------------------------------
-// Módulo de controle dos vídeos
+// Video control module
 //=============================================================================
 (function ($) {
 
