@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Map Zoom (v1.2.3)
+// MBS - Map Zoom (v1.2.4)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -158,154 +158,146 @@ MBS.MapZoom = {};
   $.Param = $.Param || {};
 
   //-----------------------------------------------------------------------------
-  // Configurações
+  // Settings
   //
 
-  // Resetar ao mudar o mapa
+  // Flag to enable/disable resetting the zoom on map change
   $.Param.resetOnMapChange = ($.Parameters["Reset on map change"].toLowerCase() === "true");
 
   //-----------------------------------------------------------------------------
   // Game_Map
   //
-  // O objeto do mapa do jogo
+  // The game map object. Here the main changes for controlling the map zoom were
+  // made.
 
-  // Alias
+  // Aliases
   var _GameMap_initialize = Game_Map.prototype.initialize;
   var _GameMap_setup = Game_Map.prototype.setup;
   var _GameMap_update = Game_Map.prototype.update;
 
-  /**
-   * Inicialização do objeto
-   */
+  // Object initialization. Here the zoom-related variables are created.
   Game_Map.prototype.initialize = function() {
     _GameMap_initialize.call(this);
-    Game_Map._destZoom = Game_Map._destZoom || new PIXI.Point(0, 0);
-    Game_Map._zoomTime = 0;
-    Game_Map._zoomDuration = Game_Map._zoomDuration || 0;
-    Game_Map._zoom = Game_Map._zoom || new PIXI.Point(1.0, 1.0);
-    Game_Map._zoomCenter = null;
+    this._destZoom = this._destZoom || new PIXI.Point(0, 0);
+    this._zoomTime = 0;
+    this._zoomDuration = this._zoomDuration || 0;
+    this._zoom = this._zoom || new PIXI.Point(1.0, 1.0);
+    this._zoomCenter = null;
   };
 
-  /**
-   * Configuração do objeto
-   */
+  // Map setup. This will reset the map zoom if 'Reset on map change' is true.
   Game_Map.prototype.setup = function(mapId) {
     _GameMap_setup.call(this, mapId);
     if ($.Param.resetOnMapChange)
-    	Game_Map._zoom = new PIXI.Point(1.0, 1.0);
+    	this._zoom = new PIXI.Point(1.0, 1.0);
   };
 
+  // Map update. This method controls the gradual zoom when a duration 
+  // is specified.
   Game_Map.prototype.update = function () {
   	_GameMap_update.apply(this, arguments);
-  	if (Game_Map._zoomDuration > Game_Map._zoomTime) {
-	    Game_Map.zoom.x += Game_Map._spdZoom.x;
-	    Game_Map.zoom.y += Game_Map._spdZoom.y;
-        Game_Map._zoomTime++;
+  	if (this._zoomDuration > this._zoomTime) {
+	    this.zoom.x += this._spdZoom.x;
+	    this.zoom.y += this._spdZoom.y;
+        this._zoomTime++;
         this.onZoomChange();
-	} else if (Game_Map._zoomTime > 0) {
-        Game_Map._zoomTime = 0;
-        Game_Map._zoomDuration = 0;
-        Game_Map._spdZoom = new Point(0, 0);
+	} else if (this._zoomTime > 0) {
+        this._zoomTime = 0;
+        this._zoomDuration = 0;
+        this._spdZoom = new Point(0, 0);
     }
   };
 
   /**
-   * Definição do zoom do mapa
+   * Sets the game map zoom ratio.
+   * @param {Number} x The horizontal zoom ratio
+   * @param {Number} y The vertical zoom ratio
    */
   Game_Map.prototype.setZoom = function(x, y, duration) {
   	duration = duration || 60;
   	duration = Math.round(duration <= 0 ? 1 : duration) * 1.0;
-  	Game_Map._destZoom.x = Game_Map._destZoom.y = x;
+  	this._destZoom.x = this._destZoom.y = x;
   	if (y) {
-  		Game_Map._destZoom.y = y;
+  		this._destZoom.y = y;
   	}
-  	Game_Map._spdZoom = new PIXI.Point((Game_Map._destZoom.x - Game_Map._zoom.x) / duration, (Game_Map._destZoom.y - Game_Map._zoom.y) / duration);
-  	Game_Map._zoomDuration = duration;
-    Game_Map._zoomTime = 0;
+  	this._spdZoom = new PIXI.Point((this._destZoom.x - this._zoom.x) / duration, (this._destZoom.y - this._zoom.y) / duration);
+  	this._zoomDuration = duration;
+    this._zoomTime = 0;
   };
 
+  /**
+   * Sets the game map zoom origin.
+   * @param {mixed} a Either a X coordinate or a Game_Character to center the zoom.
+   * @param {Number} (Optional) A Y coordinate to center the zoom.
+   */
   Game_Map.prototype.setZoomCenter = function(a, b) {
   	if (b) {
-  		Game_Map._zoomCenter = new PIXI.Point(a, b);
+  		this._zoomCenter = new PIXI.Point(a, b);
   	} else if (a) {
-  		Game_Map._zoomCenter = a;
+  		this._zoomCenter = a;
   	} else {
-  		Game_Map._zoomCenter = null;
+  		this._zoomCenter = null;
   	}
   };
 
   /**
-   * Evento de alteração de zoom
+   * Function called when the map zoom changes.
    */
   Game_Map.prototype.onZoomChange = function() {
-    $gamePlayer.center((Game_Map._zoomCenter || $gamePlayer).x, (Game_Map._zoomCenter || $gamePlayer).y);
+    $gamePlayer.center((this._zoomCenter || $gamePlayer).x, (this._zoomCenter || $gamePlayer).y);
   };
 
   /**
-   * Aquisição de cordenadas no mapa pelas cordenadas na tela
+   * Gets a map coordinate from a screen coordinate.
+   * @param {Number} x The screen coordinate
+   * @return The X position of the tile below the screen X given.
    */
   Game_Map.prototype.canvasToMapX = function(x) {
-    var tileWidth = this.tileWidth() * Game_Map.zoom.x;
+    var tileWidth = this.tileWidth() * this.zoom.x;
     var originX = this.displayX() * tileWidth;
     var mapX = Math.floor((originX + x) / tileWidth);
     return this.roundX(mapX);
   };
 
   /**
-   * Aquisição de cordenadas no mapa pelas cordenadas na tela
+   * Gets a map coordinate from a screen coordinate.
+   * @param {Number} y The screen coordinate
+   * @return The Y position of the tile below the screen Y given.
    */
   Game_Map.prototype.canvasToMapY = function(y) {
-    var tileHeight = this.tileHeight() * Game_Map.zoom.y;
+    var tileHeight = this.tileHeight() * this.zoom.y;
     var originY = this.displayY() * tileHeight;
     var mapY = Math.floor((originY + y) / tileHeight);
     return this.roundY(mapY);
   };
 
-  // Zoom
-  Object.defineProperty(Game_Map, "zoom", {
-  	get: function() {
-  		return Game_Map._zoom;
-  	}
-  });
+  // Zoom property
+  Game_Map.prototype.__defineGetter__('zoom', function() { return this._zoom; });
 
   //-----------------------------------------------------------------------------
   // Game_Event
   //
-  // Classe dos eventos
+  // Game events class. Changed it to center the screen into the event when it's 
+  // given as the zoomCenter for $gameMap.
 
   var Game_Event_update = Game_Event.prototype.update;
 
-  Game_Event.prototype.updateScroll = function(lastScrolledX, lastScrolledY) {
-    var x1 = lastScrolledX;
-    var y1 = lastScrolledY;
-    var x2 = this.scrolledX();
-    var y2 = this.scrolledY();
-    if (y2 > y1 && y2 > $gamePlayer.centerY()) {
-        $gameMap.scrollDown(y2 - y1);
-    }
-    if (x2 < x1 && x2 < $gamePlayer.centerX()) {
-        $gameMap.scrollLeft(x1 - x2);
-    }
-    if (x2 > x1 && x2 > $gamePlayer.centerX()) {
-        $gameMap.scrollRight(x2 - x1);
-    }
-    if (y2 < y1 && y2 < $gamePlayer.centerY()) {
-        $gameMap.scrollUp(y1 - y2);
-    }
-  };
+  // Copies the Game_Player scroll update function into the event class
+  Game_Event.prototype.updateScroll = Game_Player.prototype.updateScroll;
 
   Game_Event.prototype.update = function() {
     var lastScrolledX = this.scrolledX();
     var lastScrolledY = this.scrolledY();
     Game_Event_update.apply(this, arguments);
-    if (this === Game_Map._zoomCenter)
+    if (this === $gameMap._zoomCenter)
     	this.updateScroll(lastScrolledX, lastScrolledY);
   };
 
   //-----------------------------------------------------------------------------
   // Game_Player
   //
-  // Classe do jogador
+  // Player character class. Changed to fix the screen center/scroll while 
+  // zoomming.
 
   // Alias
   var _GamePlayer_centerX = Game_Player.prototype.centerX;
@@ -313,22 +305,22 @@ MBS.MapZoom = {};
   var _GamePlayer_updateScroll = Game_Player.prototype.updateScroll;
 
   Game_Player.prototype.centerX = function() {
-    return _GamePlayer_centerX.call(this) / Game_Map.zoom.x;
+    return _GamePlayer_centerX.call(this) / $gameMap.zoom.x;
   };
 
   Game_Player.prototype.centerY = function() {
-    return _GamePlayer_centerY.call(this) / Game_Map.zoom.y;
+    return _GamePlayer_centerY.call(this) / $gameMap.zoom.y;
   };
 
   Game_Player.prototype.updateScroll = function(lastScrolledX, lastScrolledY) {
-    if (!Game_Map._zoomCenter || Game_Map._zoomCenter === this) 
+    if (!$gameMap._zoomCenter || $gameMap._zoomCenter === this) 
     	_GamePlayer_updateScroll.apply(this, arguments);
   };
 
   //-----------------------------------------------------------------------------
   // Spriteset_Map
   //
-  // Spriteset do mapa do jogo
+  // Map spriteset. This is where the real zooming happens.
 
   // Alias
   var _SpritesetMap_createLowLayer = Spriteset_Map.prototype.createLowerLayer;
@@ -336,30 +328,32 @@ MBS.MapZoom = {};
 
   Spriteset_Map.prototype.createLowerLayer = function() {
     _SpritesetMap_createLowLayer.apply(this, arguments);
-    $gameMap.setZoom(Game_Map.zoom.x, Game_Map.zoom.y, 1);
+    $gameMap.setZoom($gameMap.zoom.x, $gameMap.zoom.y, 1);
   };
 
   Spriteset_Map.prototype.updatePosition = function() {
-    var scale = Game_Map.zoom;
+    var scale = $gameMap.zoom;
     var screen = $gameScreen;
-    this.x = Math.round(-Game_Map.zoom.x * (scale.x - 1));
-    this.y = Math.round(-Game_Map.zoom.y * (scale.x - 1));
+    this.x = Math.round(-$gameMap.zoom.x * (scale.x - 1));
+    this.y = Math.round(-$gameMap.zoom.y * (scale.x - 1));
     this.x += Math.round(screen.shake());
     if (this.scale.x !== scale.x || this.scale.y !== scale.y) {
-        var dscale = Game_Map._destZoom;
-        var sw = Graphics.width / dscale.x + this._tilemap._margin * 2;
-        var sh = Graphics.height / dscale.y + this._tilemap._margin * 2;
-        if ((this.scale.x > dscale.x || this.scale.y > dscale.y) && !(this.width === sw && this.height === sh)) {
-            var w = ($gameMap.width() + 4) * $gameMap.tileWidth() + this._tilemap._margin * 2;
-            var h = ($gameMap.height() + 3) * $gameMap.tileHeight() + this._tilemap._margin * 2;
-            var r = w > this._tilemap.width || h > this._tilemap.height;
+        var destScale = $gameMap._destZoom;
+        var sw = Graphics.width / destScale.x + this._tilemap._margin * 2;
+        var sh = Graphics.height / destScale.y + this._tilemap._margin * 2;
+        if ((this.scale.x > destScale.x || this.scale.y > destScale.y) && !(this.width === sw && this.height === sh)) {
+            //var w = $gameMap.width() * $gameMap.tileWidth() + this._tilemap._margin * 2;
+            //var h = $gameMap.height() * $gameMap.tileHeight() + this._tilemap._margin * 2;
+            var r = sw > this._tilemap.width || sh > this._tilemap.height;
+
             if (r) {
-                this._tilemap.width = Math.min(w, sw);
-                this._tilemap.height = Math.min(h, sh);
+                this._tilemap.width = sw;//Math.max(w, sw);
+                this._tilemap.height = sh;//Math.max(h, sh);
                 this._tilemap.refresh();
             }
+
         }
-        this.scale = scale.clone();
+        this.scale = new PIXI.Point(scale.x, scale.y);
         this._parallax.move(this._parallax.x, this._parallax.y, Graphics.width / scale.x, Graphics.height / scale.y);
     }
   };
@@ -415,7 +409,7 @@ MBS.MapZoom = {};
   //-----------------------------------------------------------------------------
   // Game_Picture
   //
-  // Objeto das pictures do jogo
+  // Game pictures object. Changed to apply zoom on images marked with [Zoom].
 
   var _GamePicture_update = Game_Picture.prototype.update;
 
@@ -426,16 +420,16 @@ MBS.MapZoom = {};
 
   Game_Picture.prototype.updateZoom = function() {
     if (this._duration > 0) {
-        this._scaleX *= Game_Map.zoom.x;
-        this._scaleY *= Game_Map.zoom.y;
+        this._scaleX *= $gameMap.zoom.x;
+        this._scaleY *= $gameMap.zoom.y;
     } else {
-        this._scaleX = this._targetScaleX * Game_Map.zoom.x;
-        this._scaleY = this._targetScaleY * Game_Map.zoom.y;
+        this._scaleX = this._targetScaleX * $gameMap.zoom.x;
+        this._scaleY = this._targetScaleY * $gameMap.zoom.y;
     }
   };
 
   Game_Picture.prototype.mapZoom = function() {
-    return !!this.name().toLowerCase().match(/\s*\[\s*zoom\s*\]\s*/);
+    return !!this.name().match(/\s*\[\s*zoom\s*\]\s*/i);
   };
 
   //-----------------------------------------------------------------------------
@@ -443,11 +437,11 @@ MBS.MapZoom = {};
   //
 
   Game_Map.prototype.screenTileX = function() {
-    return Graphics.width / this.tileWidth() / Game_Map.zoom.x;
+    return Graphics.width / this.tileWidth() / $gameMap.zoom.x;
   };
 
   Game_Map.prototype.screenTileY = function() {
-    return Graphics.height / this.tileHeight() / Game_Map.zoom.y;
+    return Graphics.height / this.tileHeight() / $gameMap.zoom.y;
   };
 
   //-----------------------------------------------------------------------------
@@ -457,9 +451,6 @@ MBS.MapZoom = {};
   // Alias
   var _GameInterpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
 
-  /**
-   * Comando de plugin
-   */
   Game_Interpreter.prototype.pluginCommand = function (command, args) {
   	_GameInterpreter_pluginCommand.call(this, command, args);
   	if (command == "MapZoom") {
@@ -512,5 +503,5 @@ if (Imported["MVCommons"]) {
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
-    }, "29-10-2015");
+    }, "29-01-2016");
 }
