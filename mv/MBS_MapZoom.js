@@ -515,7 +515,7 @@ MBS.MapZoom = {};
 })(MBS.MapZoom);
 
 if (Imported["MVCommons"]) {
-  PluginManager.register("MBS_MapZoom", 1.2, "Makes it possible to zoom in and out the game map whenever you want", {  
+  PluginManager.register("MBS_MapZoom", 1.3, "Makes it possible to zoom in and out the game map whenever you want", {  
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
