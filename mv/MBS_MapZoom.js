@@ -435,8 +435,9 @@ MBS.MapZoom = {};
 
   Game_Picture.prototype.updateZoom = function() {
     if (this._duration > 0) {
-        this._scaleX *= $gameMap.zoom.x;
-        this._scaleY *= $gameMap.zoom.y;
+      var d = this._duration;
+      this._scaleX = (this._scaleX  * (d - 1) + this._targetScaleX)  / d * $gameMap.zoom.x;
+      this._scaleY = (this._scaleX  * (d - 1) + this._targetScaleX)  / d * $gameMap.zoom.y;
     } else {
         this._scaleX = this._targetScaleX * $gameMap.zoom.x;
         this._scaleY = this._targetScaleY * $gameMap.zoom.y;
