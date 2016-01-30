@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Map Zoom (v1.3.0)
+// MBS - Map Zoom (v1.3.1)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -506,7 +506,7 @@ MBS.MapZoom = {};
   	  	} else {
   	  		$gameMap.setZoomCenter(Number(args[1]), Number(args[2]));
   	  	}
-        $gameMap.setZoom(Game_Map._destZoom.x, Game_Map._destZoom.y, Game_Map._zoomDuration - Game_Map._spdZoom);
+        $gameMap.setZoom($gameMap._destZoom.x, $gameMap._destZoom.y, $gameMap._zoomDuration - $gameMap._spdZoom);
   	  }
   	}
   };
