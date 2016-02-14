@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Map Zoom (v1.3.1)
+// MBS - Map Zoom (v1.3.2)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -369,6 +369,7 @@ MBS.MapZoom = {};
 
         }
         this.scale = new PIXI.Point(scale.x, scale.y);
+        this._pictureContainer.scale = new PIXI.Point(1.0 / scale.x,  1.0 / scale.y);
         this._parallax.move(this._parallax.x, this._parallax.y, Graphics.width / scale.x, Graphics.height / scale.y);
     }
   };
@@ -445,7 +446,7 @@ MBS.MapZoom = {};
   };
 
   Game_Picture.prototype.mapZoom = function() {
-    return !!this.name().match(/\s*\[\s*zoom\s*\]\s*/i);
+    return !!this.name().match(/\[zoom\]/i);
   };
 
   //-----------------------------------------------------------------------------
@@ -519,5 +520,5 @@ if (Imported["MVCommons"]) {
       email: "masked.rpg@gmail.com",
       name: "Masked", 
       website: "N/A"
-    }, "29-01-2016");
+    }, "14-02-2016");
 }
