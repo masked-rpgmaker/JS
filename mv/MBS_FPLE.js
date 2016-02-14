@@ -1,7 +1,9 @@
+/* global THREE, $gameMap, $gamePlayer, Spriteset_Base, Spriteset_Map, PIXI, Graphics, Input, Game_Player, $dataMap, PluginManager, Scene_Map */
+
 /**
  *  @file    MBS - FPLE MV
  *  @author  Masked
- *  @version 0.1-beta 2016/02/11
+ *  @version 0.3-beta 2016/02/14
  */
 /*:
  *  @plugindesc This plugin makes your game a first person labyrinth explorer.
