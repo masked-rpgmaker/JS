@@ -727,9 +727,10 @@ MBS.FPLE.Camera.prototype.constructor = MBS.FPLE.Camera;
     /**
      * Moves the player around according to FPLE rules
      */
+	var oldMoveByInput = Game_Player.prototype.moveByInput;
     Game_Player.prototype.moveByInput = function() {
-        if (!$fple) return;
-        if ($fple.camera.rotation.y === (this.cameraAngle() * Math.PI / 180.0) &&
+        if (!$fple) oldMoveByInput.apply(this, arguments);
+		else if ($fple.camera.rotation.y === (this.cameraAngle() * Math.PI / 180.0) &&
                 !this.isMoving() && this.canMove()) {
             if (Input.isPressed('right')) {
                 this.turnRight90();
