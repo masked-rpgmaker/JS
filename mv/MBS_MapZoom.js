@@ -259,7 +259,7 @@ MBS.MapZoom = {};
    * Function called when the map zoom changes.
    */
   Game_Map.prototype.onZoomChange = function() {
-    $gamePlayer.center((this._zoomCenter || $gamePlayer).x, (this._zoomCenter || $gamePlayer).y);
+    $gamePlayer.center((this._zoomCenter || $gamePlayer)._realX, (this._zoomCenter || $gamePlayer)._realY);
   };
 
   /**
