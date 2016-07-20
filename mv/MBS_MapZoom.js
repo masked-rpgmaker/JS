@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Map Zoom (v1.3.2)
+// MBS - Map Zoom (v1.3.4)
 //-----------------------------------------------------------------------------
 // por Masked
 //=============================================================================
@@ -290,25 +290,6 @@ MBS.MapZoom = {};
   Game_Map.prototype.__defineGetter__('zoom', function() { return this._zoom; });
 
   //-----------------------------------------------------------------------------
-  // Game_Event
-  //
-  // Game events class. Changed it to center the screen into the event when it's 
-  // given as the zoomCenter for $gameMap.
-
-  var Game_Event_update = Game_Event.prototype.update;
-
-  // Copies the Game_Player scroll update function into the event class
-  Game_Event.prototype.updateScroll = Game_Player.prototype.updateScroll;
-
-  Game_Event.prototype.update = function() {
-    var lastScrolledX = this.scrolledX();
-    var lastScrolledY = this.scrolledY();
-    Game_Event_update.apply(this, arguments);
-    if (this === $gameMap._zoomCenter)
-    	this.updateScroll(lastScrolledX, lastScrolledY);
-  };
-
-  //-----------------------------------------------------------------------------
   // Game_Player
   //
   // Player character class. Changed to fix the screen center/scroll while 
@@ -330,6 +311,27 @@ MBS.MapZoom = {};
   Game_Player.prototype.updateScroll = function(lastScrolledX, lastScrolledY) {
     if (!$gameMap._zoomCenter || $gameMap._zoomCenter === this) 
     	_GamePlayer_updateScroll.apply(this, arguments);
+  };
+
+  //-----------------------------------------------------------------------------
+  // Game_Event
+  //
+  // Game events class. Changed it to center the screen into the event when it's 
+  // given as the zoomCenter for $gameMap.
+
+  var Game_Event_update = Game_Event.prototype.update;
+
+  // Copies the Game_Player scroll update function into the event class
+  Game_Event.prototype.centerX = Game_Player.prototype.centerX;
+  Game_Event.prototype.centerY = Game_Player.prototype.centerY;
+  Game_Event.prototype.updateScroll = Game_Player.prototype.updateScroll;
+
+  Game_Event.prototype.update = function() {
+    var lastScrolledX = this.scrolledX();
+    var lastScrolledY = this.scrolledY();
+    Game_Event_update.apply(this, arguments);
+    if (this === $gameMap._zoomCenter)
+    	this.updateScroll(lastScrolledX, lastScrolledY);
   };
 
   //-----------------------------------------------------------------------------
