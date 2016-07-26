@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Sound Emittance (v1.1.2)
+// MBS - Sound Emittance (v1.1.3)
 //-----------------------------------------------------------------------------
 // by Masked
 //=============================================================================
@@ -152,9 +152,7 @@ MBS.SoundEmittance = {};
 		set: function(value) {
 			this._position = value;
 			if (this._pannerNode)
-	        	this._pannerNode.setPosition(this._position[0] || 0, this._position[2] || 0, this._position[1] || 0);
-	    	if (WebAudio._context && WebAudio._context.listener)
-				WebAudio._context.listener.setPosition($gamePlayer._realX, 0, $gamePlayer._realY);
+	        	this._pannerNode.setPosition((this._position[0] || 0), this._position[2] || 0, (this._position[1] || 0));
 		}
 	});
 
@@ -177,11 +175,42 @@ MBS.SoundEmittance = {};
 	};
 
 	//-----------------------------------------------------------------------------
+	// Game_SoundEmittance
+	//
+	var $gameSoundEmittances = [];
+	var $_soundEmittances = [];
+
+	function Game_SoundEmittance() {
+		this.initialize.apply(this, arguments);
+	}
+
+	Game_SoundEmittance.prototype.initialize = function(filename) {
+		this.filename = filename;
+		this.volume = 90;
+		this.pitch = 100;
+		this.playing = false;
+		this.playParameters = [];
+		this.maxDistance = 1;
+		this.position = [0, 0];
+	}
+
+	Game_SoundEmittance.prototype.play = function() {
+		this.playing = true;
+		this.playParameters = arguments;
+	}
+
+	Game_SoundEmittance.prototype.stop = function() {
+		this.playing = false;
+		this.playParameters = [];
+	}
+
+	//-----------------------------------------------------------------------------
 	// Game_Event
 	//
 
 	// Aliases
 	var Game_Event_update_old = Game_Event.prototype.update;
+	var Game_Event_refresh_old = Game_Event.prototype.refresh;
 	var Game_Event_setupPage_old = Game_Event.prototype.setupPage;
 
 	// Event page setup
@@ -209,7 +238,7 @@ MBS.SoundEmittance = {};
 
 		var filename = (/\s*<\s*s_emittance\s*:\s*(.+)\s*>\s*/i.exec(comments) || [])[1];
 		if (filename != undefined)
-			this._sEmittance = new WebAudio(audioFilename(AudioManager._path + filename));
+			this._sEmittance = new Game_SoundEmittance(audioFilename(AudioManager._path + filename));
 
 		var radius = (/\s*<\s*s_e_radius\s*:\s*(\d+(\.\d+)?)\s*>\s*/i.exec(comments) || [])[1];
 		this._sEmittanceRadius = radius || 1;
@@ -232,12 +261,26 @@ MBS.SoundEmittance = {};
 
 	// Updates the sound emittance as needed
 	Game_Event.prototype.updateSEmittance = function() {
-		if (this._sEmittance && this._sEmittance.isReady()) {
-			if (!this._sEmittance.isPlaying()) {
+		if (this._sEmittance) {
+			if (!this._sEmittance.playing) {
 				this._sEmittance.play(true, 0);
-				this._sEmittance._pannerNode.maxDistance = this._sEmittanceRadius || 1;
+				this._sEmittance.maxDistance = this._sEmittanceRadius || 1;
 			}
-			this._sEmittance.position = [this._realX, this._realY];
+			this._sEmittance.position = [this._realX - $gamePlayer._realX, this._realY - $gamePlayer._realY];
+		}
+	};
+
+	Game_Event.prototype.refresh = function() {
+		Game_Event_refresh_old.apply(this, arguments);
+		this.refreshSEmittance();
+	}
+
+	// Adds the sound emittance to the playing list
+	Game_Event.prototype.refreshSEmittance = function() {
+		if (this._sEmittance) {
+			var emittance = new WebAudio(this._sEmittance.filename);
+			emittance._evEmittance = this._sEmittance;
+			$_soundEmittances.push(emittance);
 		}
 	};
 
@@ -252,13 +295,47 @@ MBS.SoundEmittance = {};
 	//
 
 	var Game_Map_setupEvents = Game_Map.prototype.setupEvents;
-	
+
 	Game_Map.prototype.setupEvents = function() {
-		this._events.forEach(function (event) {
-			event.stopSEmittance();
+		$_soundEmittances.forEach(function(e) {
+			e.stop();
 		});
+		$_soundEmittances = [];
 	    Game_Map_setupEvents.apply(this, arguments);
 	};
+
+	//-----------------------------------------------------------------------------
+	// Scene_Map
+	//
+	var Scene_Map_update    = Scene_Map.prototype.update;
+	var Scene_Map_start     = Scene_Map.prototype.start;
+	var Scene_Map_terminate = Scene_Map.prototype.terminate;
+
+	Scene_Map.prototype.update = function() {
+		Scene_Map_update.apply(this, arguments);
+		$_soundEmittances.forEach(function(emittance) {
+			emittance.position = emittance._evEmittance.position;
+			if (emittance.isPlaying()) {
+				if (!emittance._evEmittance.playing) emittance.stop();
+			} else if (emittance && emittance.isReady()) {
+				emittance.play.apply(emittance, emittance._evEmittance.playParameters);
+				emittance._pannerNode.maxDistance = emittance._evEmittance.maxDistance;
+			}
+		});
+	}
+
+	Scene_Map.prototype.start = function() {
+		Scene_Map_start.apply(this, arguments);
+		$gameMap.refresh();
+	}
+
+	Scene_Map.prototype.terminate = function() {
+		Scene_Map_terminate.apply(this, arguments);
+		$_soundEmittances.forEach(function(emittance) {
+			emittance.stop();
+		});
+		$_soundEmittances = [];
+	}
 
 })(MBS.SoundEmittance);
 
@@ -268,7 +345,7 @@ if (Imported["MVCommons"]) {
      	email: "masked.rpg@gmail.com",
     	name: "Masked", 
  	    website: "N/A"
-    }, "10-12-2015");
+    }, "2015-07-26");
 } else {
 	Imported.MBS_SoundEmittance = 1.1;
 }
