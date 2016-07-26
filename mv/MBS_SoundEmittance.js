@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Sound Emittance (v1.1.3)
+// MBS - Sound Emittance (v1.2.0)
 //-----------------------------------------------------------------------------
 // by Masked
 //=============================================================================
@@ -17,6 +17,10 @@ and distance.
 @param Use HRTF
 @desc Choose whether to use HRTF panning model for the 3D  sound positioning
 or not (RPG Maker uses equalpower by default).
+@default true
+
+@param 3D Sound
+@desc Determines whether to use tridimensional sound positioning or not.
 @default true
 
 @help
@@ -66,6 +70,10 @@ distância.
 @desc Determina quando usar HRTF para o posicionamento 3D do som ou não.
 (O RPG Maker usa equalpower por padrão).
 @default true
+
+@param 3D Sound
+@desc Determina usar posicionamento 3D para o som ou não.
+@param true
 
 @help
 ===========================================================================
@@ -122,6 +130,7 @@ MBS.SoundEmittance = {};
 	//
 
 	$.Param.useHRTF = !!$.Parameters['Use HRTF'].match(/true/i);
+	$.Param.use3D   = !!$.Parameters['3D Sound'].match(/true/i);
 
  	//-----------------------------------------------------------------------------
 	// Module Functions
@@ -316,7 +325,7 @@ MBS.SoundEmittance = {};
 	Scene_Map.prototype.update = function() {
 		Scene_Map_update.apply(this, arguments);
 		$_soundEmittances.forEach(function(emittance) {
-			emittance.position = emittance._evEmittance.position;
+			if ($.Param.use3D) emittance.position = emittance._evEmittance.position;
 			if (emittance.isPlaying()) {
 				if (!emittance._evEmittance.playing) emittance.stop();
 			} else if (emittance && emittance.isReady()) {
