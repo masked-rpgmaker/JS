@@ -278,6 +278,8 @@ MBS.SoundEmittance = {};
 	// Adds the sound emittance to the playing list
 	Game_Event.prototype.refreshSEmittance = function() {
 		if (this._sEmittance) {
+			for (var i = 0; i < $_soundEmittances.length; i++)
+				if ($_soundEmittances[i]._evEmittance == this._sEmittance) return;
 			var emittance = new WebAudio(this._sEmittance.filename);
 			emittance._evEmittance = this._sEmittance;
 			$_soundEmittances.push(emittance);
