@@ -291,6 +291,10 @@ MBS.SoundEmittance = {};
 				if ($_soundEmittances[i]._evEmittance == this._sEmittance) return;
 			var emittance = new WebAudio(this._sEmittance.filename);
 			emittance._evEmittance = this._sEmittance;
+
+			emittance.volume = this._sEmittance.volume;
+			emittance.pitch = this._sEmittance.pitch;
+			
 			$_soundEmittances.push(emittance);
 		}
 	};
@@ -325,7 +329,15 @@ MBS.SoundEmittance = {};
 	Scene_Map.prototype.update = function() {
 		Scene_Map_update.apply(this, arguments);
 		$_soundEmittances.forEach(function(emittance) {
-			if ($.Param.use3D) emittance.position = emittance._evEmittance.position;
+			if ($.Param.use3D) 
+				emittance.position = emittance._evEmittance.position;
+			else 
+			{
+				var dx = emittance._evEmittance.position[0], 
+					dy = emittance._evEmittance.position[1];
+				var distance = Math.sqrt(dx*dx + dy*dy);
+				emittance.volume = emittance._evEmittance.volume * (emittance._evEmittance.maxDistance - distance) / emittance._evEmittance.maxDistance;
+			}
 			if (emittance.isPlaying()) {
 				if (!emittance._evEmittance.playing) emittance.stop();
 			} else if (emittance && emittance.isReady()) {
