@@ -1,5 +1,5 @@
 //=============================================================================
-// MBS - Sound Emittance (v1.2.0)
+// MBS - Sound Emittance (v1.2.1)
 //-----------------------------------------------------------------------------
 // by Masked
 //=============================================================================
@@ -195,8 +195,8 @@ MBS.SoundEmittance = {};
 
 	Game_SoundEmittance.prototype.initialize = function(filename) {
 		this.filename = filename;
-		this.volume = 90;
-		this.pitch = 100;
+		this.volume = 0.9;
+		this.pitch = 1;
 		this.playing = false;
 		this.playParameters = [];
 		this.maxDistance = 1;
@@ -339,7 +339,10 @@ MBS.SoundEmittance = {};
 				emittance.volume = emittance._evEmittance.volume * (emittance._evEmittance.maxDistance - distance) / emittance._evEmittance.maxDistance;
 			}
 			if (emittance.isPlaying()) {
-				if (!emittance._evEmittance.playing) emittance.stop();
+				if (!emittance._evEmittance.playing) {
+					emittance.stop();
+					$_soundEmittances.splice($_soundEmittances.indexOf(emittance), 1);
+				}
 			} else if (emittance && emittance.isReady()) {
 				emittance.play.apply(emittance, emittance._evEmittance.playParameters);
 				emittance._pannerNode.maxDistance = emittance._evEmittance.maxDistance;
