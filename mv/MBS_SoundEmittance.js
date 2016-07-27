@@ -364,11 +364,11 @@ MBS.SoundEmittance = {};
 
 // Registering the plugin
 if (Imported["MVCommons"]) {
- 	PluginManager.register("MBS_SoundEmittance", 1.1, "Allows you to set an sound emittance for events", {  
+ 	PluginManager.register("MBS_SoundEmittance", 1.2, "Allows you to set an sound emittance for events", {  
      	email: "masked.rpg@gmail.com",
     	name: "Masked", 
  	    website: "N/A"
     }, "2015-07-26");
 } else {
-	Imported.MBS_SoundEmittance = 1.1;
+	Imported.MBS_SoundEmittance = 1.2;
 }
