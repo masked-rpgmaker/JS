@@ -1,7 +1,7 @@
 /**
  *  @file    MBS - FPLE MV
  *  @author  Masked
- *  @version 1.3.0 2016-07-30
+ *  @version 1.4.0 2017-01-02
  */
 /*:
  *  @plugindesc This plugin makes your game a first person labyrinth explorer.
@@ -25,7 +25,8 @@
  *  @default 1
  *  
  *  @param Ceiling Region
- *  @desc The Region ID for ceiled tiles.
+ *  @desc The Region IDs for ceiled tiles, you can specify more than one region here by
+ *        setting this to a list of region ids sepparated by spaces.
  *  @default 0
  *  
  *  @param 3D Anaglyph
@@ -68,10 +69,8 @@
  *  I really recommend using the Demo as a base for creating your FPLE
  *  projects, so you can skip this part.
  *  If you create the project from scratch, however, you'll need to download
- *  babylon.js by yourself from http://cdn.babylonjs.com/2-3/babylon.js and
- *  save it at your project's "js/libs" folder. This plugin was made using
- *  babylon.js 2.3, so you should use this version too to avoid possible
- *  bugs, but feel free to try later versions.
+ *  babylon.js by yourself from http://cdn.babylonjs.com/babylon.js and
+ *  save it at your project's "js/libs" folder.
  *  Then, edit your index.html and add this after line 14:
  *  <script type="text/javascript" src="js/libs/babylon.js"></script>
  *  Now, you're half a step nearer to be ready to go.
@@ -103,13 +102,17 @@
  *  wall to create holes since it's invisible. Also, you may want your map to 
  *  have a ceiling, if so, you just have to set the tiles you want with the 
  *  ceil region you choose on the plugin settings.
- *	To activate FPLE on your map, just add "<FPLE>" (without quotes) to its notes.
+ *  
+ *  To activate FPLE on your map, just add "<fple>" (without quotes) to its notes.
+ *  This is case sensitive! <FPLE> will not work.
  *
  *  5. Plugin commands
  * 
  *  FPLE setResolution <x | v[n]>    : Sets the FPLE canvas resolution (higher 
  *                                     is better)
  *  FPLE setViewDistance <x | v[n]>  : Sets the FPLE view distance in tile
+ *  FPLE setLightColor <hex | v[n]>  : Changes the FPLE light color to the hex 
+ *                                     value given
  *
  *  Examples:
  *  FPLE setResolution 0.5           : Sets the resolution at half
@@ -119,6 +122,11 @@
  *  FPLE setViewDistance 3           : Sets the view radius to 3 tiles
  *  FPLE setViewDistance v[42]       : Sets the view radius to the value of
  *                                     variable 42
+ *
+ *  FPLE setLightColor ff0000        : Sets the light color to Red
+ *  FPLE setLightColor v[42]         : Sets the light color to the value of
+ *                                     variable 42 (that must be a string and 
+ *                                     be in hexadecimal format!)
  *
  *
  *                                   Credits
@@ -234,11 +242,12 @@
  *  FPLE setResolution <x | v[n]>    : Define a resolução do canvas do FPLE
  *                                     (quanto maior, melhor)
  *  FPLE setViewDistance <x | v[n]>  : Define o raio de visão do jogador
+ *  FPLE setLightColor <x | v[n]>    : Define a cor da luz do FPLE
  *
  *  Exemplos:
  *  FPLE setResolution 0.5           : Define a resolução como metade do normal
  *  FPLE setResolution v[42]         : Define a resolução como o valor da
- *                                     variável número 42 
+ *                                     variável número 42
  *
  *  FPLE setViewDistance 3           : Define o raio de visão como 3 tiles
  *  FPLE setViewDistance v[42]       : Define o raio de visão como o valor da
@@ -266,7 +275,7 @@ if (!BABYLON.Engine.isSupported())
 
 // Import for compatibility check
 var Imported = Imported || {};
-Imported['MBS - FPLE'] = 1.30;
+Imported['MBS - FPLE'] = 1.40;
 
 // MBS module
 var MBS = MBS || {};
@@ -288,10 +297,17 @@ var $babylon, $fple;
     // Parameters
     //-----------------------------------------------------------------------
     $.viewRadius    = Number($.Params['View Distance']);
-	$.fov           = Number($.Params['Field Of View']) / 100.0;
+    $.fov           = Number($.Params['Field Of View']) / 100.0;
     $.lightColor    = $.Params['Light Color'];
     $.wallTerrain   = Number($.Params['Wall Terrain']);
-    $.ceilRegion    = Number($.Params['Ceiling Region']);
+
+    $.ceilRegion    = String($.Params['Ceiling Region']).split(/\s+/);
+    if ($.ceilRegion === '') $.ceilRegion = [];
+    for (var temp = 0; temp < $.ceilRegion.length; ++temp) {
+      $.ceilRegion[temp] =
+        parseInt($.ceilRegion[temp]);
+    };
+
     $.anaglyph3d    = !!Number($.Params['3D Anaglyph']);
     $.textureFilter = $.Params['Texture Filter'];
     $.textureFormat = $.Params['Texture Format'];
@@ -308,7 +324,7 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     // Image files format string
     //-----------------------------------------------------------------------
-    $.textureFileFormat = "img/textures/%1_%2-%3.%4";
+    $.textureFileFormat = "img/textures/%1_%2-%3%4.%5";
     $.bumpTextureFileFormat = "img/bump/%1_%2-%3.%4";
     $.parallaxFileFormat = "img/parallaxes/%1.%2";
     //-----------------------------------------------------------------------
@@ -319,44 +335,48 @@ var $babylon, $fple;
     $.setPixelRate = function(n) {
         if (!Graphics._fple_renderer) return;
         Graphics._fple_renderer.setSize(
-			Graphics.width * n, 
-			Graphics.height * n
-		);
+            Graphics.width * n, 
+            Graphics.height * n
+        );
         Graphics._updateFPLE();
     };
     //-----------------------------------------------------------------------
     // Gets a nice cube with correctly oriented faces
-	//
-	// scene : Scene the cube is being used in
+    //
+    // scene        : Scene the cube is being used in
+    // updatable    : Set to true if the cube will be updated
     //-----------------------------------------------------------------------
     $.createCube = function(scene) {
-		// For God's sake, don't mess this array up
-		//
-		// Directions relative to the direction you're facing when the
-		// game starts
-		var uvs = [
-			0, 0, 1, 0, // Back
-			1, 1, 0, 1,
-			
-			1, 1, 0, 1, // Front
-			0, 0, 1, 0,
-			
-			0, 1, 0, 0, // Left
-			1, 0, 1, 1,
-			
-			0, 1, 0, 0, // Right
-			1, 0, 1, 1, 
-			
-			1, 0, 1, 1, // Top
-			0, 1, 0, 0,  
-			
-			0, 1, 0, 0, // Bottom
-			1, 0, 1, 1,
-		];
+        var uvs = $.CUBE_UVS;
         var cube = BABYLON.Mesh.CreateBox('fple-cube', 1.0, scene);
-		cube.setVerticesData(BABYLON.VertexBuffer.UVKind, uvs);
-		return cube;
-    }
+        cube.setVerticesData(BABYLON.VertexBuffer.UVKind, uvs);
+        return cube;
+    };
+    //-----------------------------------------------------------------------
+    // Ffs, don't mess this array up
+    //
+    // Directions are relative to the direction you're facing when the
+    // game starts
+    //-----------------------------------------------------------------------
+    $.CUBE_UVS = [
+        0, 0, 1, 0, // Back
+        1, 1, 0, 1,
+        
+        1, 1, 0, 1, // Front
+        0, 0, 1, 0,
+        
+        0, 1, 0, 0, // Left
+        1, 0, 1, 1,
+        
+        0, 1, 0, 0, // Right
+        1, 0, 1, 1, 
+        
+        1, 0, 1, 1, // Top
+        0, 1, 0, 0,  
+        
+        0, 1, 0, 0, // Bottom
+        1, 0, 1, 1,
+    ];
 })(MBS.FPLE);
 //=============================================================================
 // MBS.FPLE.Map
@@ -370,7 +390,7 @@ var $babylon, $fple;
     MBS.FPLE.Map = function() {
         this.initialize.apply(this, arguments);
     };
-	//-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
     // Map initialization
     //-----------------------------------------------------------------------
     MBS.FPLE.Map.prototype.initialize = function() {
@@ -381,6 +401,7 @@ var $babylon, $fple;
     // Updates this map
     //-----------------------------------------------------------------------
     MBS.FPLE.Map.prototype.update = function(scene) {
+        if (!$fple) return;
         this._updateEvents();
     };
     //-----------------------------------------------------------------------
@@ -413,16 +434,17 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     // Gets a cached texture or loads it if it's hasn't been used yet.
     // 
-    // filename	: The file from where to load the texture
-	// scene	: The scene the texture is going to used into
+    // filename : The file from where to load the texture
+    // scene    : The scene the texture is going to used into
     //-----------------------------------------------------------------------
     MBS.FPLE.Map.prototype.getTexture = function(filename, scene) {
         var cache = this._cache.textures[filename];
+        if (cache) return cache;
 
-        if (cache)
-            return cache;
+        var texture;
+        while (!texture)
+            texture = new BABYLON.Texture(filename, scene, false);
 
-        var texture = new BABYLON.Texture(filename, scene, false);
         texture.anisotropicFilteringLevel = MBS.FPLE.anisotropy;
 
         if (MBS.FPLE.textureFilter.match(/^nearest$/i))
@@ -436,28 +458,31 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     // Gets a cached material or loads it if it's hasn't been used yet.
     // 
-    // filename	: The file from where to load the material texture
+    // tile_id : The ID of the tileset being used
+    // row     : Tile row
+    // col     : Tile column
+    // ceil    : Whether the tile is a ceiling or not. 
+    //           true = ceiling, false = not ceiling. Easy.
+    // scene   : FPLE scene object
     //-----------------------------------------------------------------------
-    MBS.FPLE.Map.prototype.getMaterial = function(tile_id, row, col, scene) {
+    MBS.FPLE.Map.prototype.getMaterial = function(tile_id, row, col, ceil, scene) {
         var filename = MBS.FPLE.textureFileFormat.format(
-			$dataMap.tilesetId, 
-			row, 
-			col,
-			MBS.FPLE.textureFormat
-		);
+            tile_id, row, col, ceil ? '_ceil' : '', MBS.FPLE.textureFormat
+        );
 
-        var material;
-        if (this._cache.materials[filename]) {
-            material = this._cache.materials[filename];
-        } else {
-			var texture = this.getTexture(filename, scene);
-			material = new BABYLON.StandardMaterial(filename, scene);
-			material.diffuseTexture = texture.clone();
-			material.specularColor  = new BABYLON.Color3(0, 0, 0);
-			material.freeze();
-            this._cache.materials[filename] = material;
-        }
-        
+        if (this._cache.materials[filename])
+            return this._cache.materials[filename];
+
+        var texture;
+        while (!texture)
+            texture = this.getTexture(filename, scene);
+
+        var material = new BABYLON.StandardMaterial(filename, scene);
+        material.diffuseTexture = texture.clone();
+        material.diffuseTexture.hasAlpha = true;
+        material.specularColor = new BABYLON.Color3(0, 0, 0);
+        material.freeze();
+
         return material;
     };
     //-----------------------------------------------------------------------
@@ -465,15 +490,16 @@ var $babylon, $fple;
     // 
     // scene : The scene to add the objects into
     //-----------------------------------------------------------------------
-    MBS.FPLE.Map.prototype.toScene = function(scene) {        
+    MBS.FPLE.Map.prototype.toScene = function(scene) {
+        this._applySkybox(scene);
         this._applyTiles(scene);
         this._applyEvents(scene);
     };
     //-----------------------------------------------------------------------
     // Creates a cube to add into a FPLE scene
-	//
-	// name  : The name given to the cube
-	// scene : Scene where the cube is going to be added
+    //
+    // name  : The name given to the cube
+    // scene : Scene where the cube is going to be added
     //-----------------------------------------------------------------------
     MBS.FPLE.Map.prototype._createCube = function(name, scene) {
         var cube;
@@ -485,10 +511,40 @@ var $babylon, $fple;
         }
          
         cube = this._cubeMesh.clone(name);
-		if (!scene.meshes.contains(cube))
-			scene.addMesh(cube);
-		
+        if (!scene.meshes.contains(cube))
+            scene.addMesh(cube);
+        
         return cube;
+    };
+    //-----------------------------------------------------------------------
+    // Creates an skybox for the babylonJS scene using the parallax image
+    // 
+    // scene : The scene to add the cubes into
+    //-----------------------------------------------------------------------
+    MBS.FPLE.Map.prototype._applySkybox = function(scene) {
+        if (!$gameMap.parallaxName())
+            return;
+
+        this._skybox = this._createCube("skyBox", scene);
+        this._skybox.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
+        this._skybox.scaling = new BABYLON.Vector3(50.0, 50.0, 50.0);
+        this._skybox.position = new BABYLON.Vector3(-$gamePlayer._realX, 1, $gamePlayer._realY);
+
+        this._skybox.onBeforeDraw = function() {
+            this._skybox.position = $fple._camera.position;
+        }.bind(this);
+
+        var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+        skyboxMaterial.backFaceCulling = false;
+        skyboxMaterial.disableLighting = true;
+
+        skyboxMaterial.emissiveTexture = this.getTexture(
+            MBS.FPLE.parallaxFileFormat.format($gameMap.parallaxName(), 'png'), 
+            scene
+        );
+        skyboxMaterial.emissiveTexture.coordinatesMode = BABYLON.Texture.PROJECTION_MODE;
+        skyboxMaterial.freeze();
+        this._skybox.material = skyboxMaterial;
     };
     //-----------------------------------------------------------------------
     // Adds this map's tiles to a babylonJS scene
@@ -496,12 +552,13 @@ var $babylon, $fple;
     // scene : The scene to add the cubes into
     //-----------------------------------------------------------------------
     MBS.FPLE.Map.prototype._applyTiles = function(scene) {
-        var tile, 
-            row, 
-            col, 
-            filename, 
-            material, 
-            cube;
+        var tile,
+            row,
+            col,
+            filename,
+            material,
+            cube,
+            n;
 
         var cubes = [], materials = [];
 
@@ -514,14 +571,14 @@ var $babylon, $fple;
                 // The first tile at the first row is invisible
                 if (col === 0 && row === 0) continue;
 
-                material = this.getMaterial($dataMap.tilesetId, row, col, scene);
+                material = this.getMaterial($dataMap.tilesetId, row, col, false, scene);
 
                 if (!materials.contains(material)) {
                     cubes.push([]);
                     materials.push(material);
                 }
 
-                var n = materials.indexOf(material);
+                n = materials.indexOf(material);
 
                 // Floor
                 cube = this._createCube('floor' + x + '-' + y, scene);
@@ -536,7 +593,15 @@ var $babylon, $fple;
                 }
                 
                 // Ceiling
-                if ($gameMap.regionId(x, y) === MBS.FPLE.ceilRegion) {
+                if (MBS.FPLE.ceilRegion.indexOf($gameMap.regionId(x, y)) >= 0)
+                {
+                    material = this.getMaterial($dataMap.tilesetId, row, col, true, scene);
+                    if (!materials.contains(material)) {
+                        cubes.push([]);
+                        materials.push(material);
+                    }
+                    n = materials.indexOf(material);
+
                     cube = this._createCube('ceil' + x + '-' + y, scene);
                     cube.position = new BABYLON.Vector3(-x, MBS.FPLE.ceilHeight, y);
                     cubes[n].push(cube);
@@ -552,7 +617,7 @@ var $babylon, $fple;
     };
     //-----------------------------------------------------------------------
     // Builds a single mesh for floor, wall and ceiling cubes of the same
-    // material
+    // material. This reduces lag.
     //-----------------------------------------------------------------------
     MBS.FPLE.Map.prototype._buildMesh = function(cubes, material) {
         var mesh = BABYLON.Mesh.MergeMeshes(cubes, true);
@@ -571,56 +636,84 @@ var $babylon, $fple;
         $gameMap.events().forEach(function (event) {
             var charName = event.characterName();
             if (!charName) return;
-            
+
             var manager;
             if (!this._managers[charName]) {
-                manager = new BABYLON.SpriteManager(
-                    "ev_" + charName, 
-                    "img/characters/" + encodeURIComponent(charName) + ".png",
-                    256,
-                    48,
-                    scene
-                );
-                this._managers[charName] = manager;
+
+                var img = ImageManager.loadCharacter(charName, 0);
+                img.addLoadListener(function() {
+                    manager = new BABYLON.SpriteManager(
+                        "ev_" + charName,
+                        "img/characters/" + encodeURIComponent(charName) + ".png",
+                        256,
+                        new BABYLON.Size(img.width / 12, img.height / 8),
+                        scene
+                    );
+                    this._managers[charName] = manager;
+
+                    var sprite = new BABYLON.Sprite("event" + event.id, manager);
+                    sprite._event = event;
+                    this._events.push(sprite);
+                }.bind(this));
             } else {
                 manager = this._managers[charName];
-            }
 
-            var sprite = new BABYLON.Sprite("event" + event.id, manager);
-            sprite._event = event;
-            this._events.push(sprite);
+                var sprite = new BABYLON.Sprite("event" + event.id, manager);
+                sprite._event = event;
+                this._events.push(sprite);
+            }            
         }.bind(this));
     };
     //-----------------------------------------------------------------------
     // Updates this map's events
     //-----------------------------------------------------------------------
     MBS.FPLE.Map.prototype._updateEvents = function(scene) {
-        this._events.forEach(function (sprite) {
-            var event = sprite._event;
+        var playerPosition = new BABYLON.Vector3(-$gamePlayer._realX, MBS.FPLE.cameraHeight, $gamePlayer._realY);
+        var playerAngle = Math.round($fple._camera.rotation.y * 180 / Math.PI);
+        
+        var vr2 = MBS.FPLE.viewRadius * MBS.FPLE.viewRadius;
 
+        this._events.forEach(function (eventObject) {
+            var event = eventObject._event;
             var charIndex = event.characterIndex();
-            var row = 48;
-            var col = 3;
-            var offset = row * Math.floor(charIndex / 4) + (charIndex % 4) * col;
-            
-            var direction;
+
+            var direction, offset;
             if (!ImageManager.isObjectCharacter(event.characterName())) {
-                var eventAngle    = ([0, 90, 270, 180])[event._direction / 2 - 1];
-                var playerAngle   = $gamePlayer.cameraAngle();
+                var row = 48;
+                var col = 3;
+                offset = row * Math.floor(charIndex / 4) + (charIndex % 4) * col;
+
+                var eventAngle = ([180, 270, 90, 0])[event._direction / 2 - 1];
+                
                 var relativeAngle = playerAngle - eventAngle;
 
                 relativeAngle %= 360;
                 while (relativeAngle < 0)
                     relativeAngle += 360;
-                
-                var relativeDirection = [180, 90, 270, 0].indexOf(relativeAngle) * 2 + 2;
+
+                var angles = [180, 90, 270, 0];
+                var closest = angles[0];
+                for (var i = 0; i < angles.length; i++)
+                    if (Math.abs(relativeAngle - angles[i]) < Math.abs(relativeAngle - closest))
+                        closest = angles[i];
+
+                var relativeDirection = angles.indexOf(closest) * 2 + 2;
                 direction = (relativeDirection / 2 - 1) % 4 * col * 4;
-            } else {
-                direction = (event._direction / 2 - 1) % 4 * col * 4;
+
+                var d2 = BABYLON.Vector3.DistanceSquared(eventObject.position, playerPosition);
+                if (d2 >= vr2)
+                    eventObject.color = new BABYLON.Color4(0, 0, 0, 1);
+                else
+                    eventObject.color = new BABYLON.Color4.FromHexString(MBS.FPLE.lightColor + 'ff');
+            }
+            else
+            {
+                offset = charIndex;
+                direction = (event._direction / 2 - 1) % 4 * 3;
             }
 
-            sprite.position = new BABYLON.Vector3(-event._realX, MBS.FPLE.cameraHeight, event._realY);
-            sprite.cellIndex = offset + direction + ([0, 1, 2, 1])[event._pattern % 4];
+            eventObject.cellIndex = offset + direction + ([0, 1, 2, 1])[event._pattern % 4];
+            eventObject.position = new BABYLON.Vector3(-event._realX, MBS.FPLE.cameraHeight, event._realY);
         });
     };
 })();
@@ -631,20 +724,20 @@ var $babylon, $fple;
 // used by FPLE
 //=============================================================================
 (function() {
-	//-----------------------------------------------------------------------
-	// Constructor
-	//-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    // Constructor
+    //-----------------------------------------------------------------------
     MBS.FPLE.Camera = function() {
-		this.initialize.apply(this, arguments);
-	};
-	//-----------------------------------------------------------------------
-	// Inheritance
-	//-----------------------------------------------------------------------
-	if (!MBS.FPLE.anaglyph3d)
-		MBS.FPLE.Camera.prototype = Object.create(BABYLON.UniversalCamera.prototype);
-	else
-		MBS.FPLE.Camera.prototype = Object.create(BABYLON.AnaglyphFreeCamera.prototype);
-	MBS.FPLE.Camera.prototype.constructor = MBS.FPLE.Camera;
+        this.initialize.apply(this, arguments);
+    };
+    //-----------------------------------------------------------------------
+    // Inheritance
+    //-----------------------------------------------------------------------
+    if (!MBS.FPLE.anaglyph3d)
+        MBS.FPLE.Camera.prototype = Object.create(BABYLON.UniversalCamera.prototype);
+    else
+        MBS.FPLE.Camera.prototype = Object.create(BABYLON.AnaglyphFreeCamera.prototype);
+    MBS.FPLE.Camera.prototype.constructor = MBS.FPLE.Camera;
     //-----------------------------------------------------------------------
     // Camera initialization
     //-----------------------------------------------------------------------
@@ -666,9 +759,10 @@ var $babylon, $fple;
         this.upVector = new BABYLON.Vector3(0, 1, 0);
         this.fov = MBS.FPLE.fov;
         this.minZ = 0.1;
-        this.maxZ = MBS.FPLE.viewRadius;
+        this.maxZ = 100;//MBS.FPLE.viewRadius;
         this.rotation.y = $gamePlayer.cameraAngle() * Math.PI / 180.0;
-        this.rotation.z = Math.PI; // Look up
+        this.rotation.z = Math.PI; // Stop looking at the floor!
+        this.rotation.x = Math.PI; // Upside down...?
     };
     //-----------------------------------------------------------------------
     // Updates the camera rotation and position based on the player
@@ -694,9 +788,9 @@ var $babylon, $fple;
         var dB = Math.PI * 2 + radians - rotation;
         var dC = -Math.PI * 2 + radians - rotation;
         
-		var n = [dA, dB, dC].reduce(function (a, b) {
-			return Math.abs(a) < Math.abs(b) ? a : b;
-		});
+        var n = [dA, dB, dC].reduce(function (a, b) {
+            return Math.abs(a) < Math.abs(b) ? a : b;
+        });
 
         if (n === 0) return;
 
@@ -720,16 +814,16 @@ var $babylon, $fple;
     // Returns the camera angle representing the player direction.
     //-----------------------------------------------------------------------
     Game_Player.prototype.cameraAngle = function() {
-		return ([0, 90, 270, 180])[this._direction / 2 - 1];
+        return ([180, 270, 90, 0])[this._direction / 2 - 1];
     };
     //-----------------------------------------------------------------------
     // Moves the player around according to FPLE rules
     //-----------------------------------------------------------------------
-	var oldMoveByInput = Game_Player.prototype.moveByInput;
+    var oldMoveByInput = Game_Player.prototype.moveByInput;
     Game_Player.prototype.moveByInput = function() {
         if (!$fple) 
-			oldMoveByInput.apply(this, arguments);
-		else if ($fple.camera.rotation.y === (this.cameraAngle() * Math.PI / 180.0) &&
+            oldMoveByInput.apply(this, arguments);
+        else if ($fple.camera.rotation.y === (this.cameraAngle() * Math.PI / 180.0) &&
                 !this.isMoving() && this.canMove())
             if (Input.isPressed('right'))
                 this.turnRight90();
@@ -748,33 +842,33 @@ var $babylon, $fple;
 // This automatically creates instances of MBS.FPLE.Map and MBS.FPLE.Camera.
 //=============================================================================
 (function() {
-	//-----------------------------------------------------------------------
-	// Constructor
-	//-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    // Constructor
+    //-----------------------------------------------------------------------
     MBS.FPLE.Scene = function() {
-		this.initialize.apply(this, arguments);
-	};
-	//-----------------------------------------------------------------------
-	// Inheritance
-	//-----------------------------------------------------------------------
-	MBS.FPLE.Scene.prototype = Object.create(BABYLON.Scene.prototype);
-	MBS.FPLE.Scene.prototype.constructor = MBS.FPLE.Scene;
+        this.initialize.apply(this, arguments);
+    };
+    //-----------------------------------------------------------------------
+    // Inheritance
+    //-----------------------------------------------------------------------
+    MBS.FPLE.Scene.prototype = Object.create(BABYLON.Scene.prototype);
+    MBS.FPLE.Scene.prototype.constructor = MBS.FPLE.Scene;
     //-----------------------------------------------------------------------
     // Initializes the FPLE babylonJS scene.
     //-----------------------------------------------------------------------
     MBS.FPLE.Scene.prototype.initialize = function() {
         BABYLON.Scene.apply(this, arguments);
         this.clearColor = new BABYLON.Color4(0, 0, 0, 0);
-		
+        
         this.optimize();
-		
-        this._createMap();
+        
         this._createCamera();
+        this._createMap();
         this._createLight();
     };
-	//-----------------------------------------------------------------------
-	// Optimizes the scene by disabling some features and reducing the resolution.
-	//-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    // Optimizes the scene by disabling some features and reducing the resolution.
+    //-----------------------------------------------------------------------
     MBS.FPLE.Scene.prototype.optimize = function() {
         var level;
         
@@ -829,6 +923,14 @@ var $babylon, $fple;
         this._light.range   = MBS.FPLE.viewRadius;
     };
     //-----------------------------------------------------------------------
+    // Refreshes the light for the scene.
+    //-----------------------------------------------------------------------
+    MBS.FPLE.Scene.prototype.refreshLight = function() {
+        if (!!this._light)
+            this._light.dispose();
+        this._createLight();
+    };
+    //-----------------------------------------------------------------------
     // Updates the scene.
     //-----------------------------------------------------------------------
     MBS.FPLE.Scene.prototype.update = function() {
@@ -869,14 +971,14 @@ var $babylon, $fple;
         //-----------------------------------------------------------------
         // FPLE map (read only)
         //-----------------------------------------------------------------
-		map: {
+        map: {
             get: function() {
                 return this._map;
             }
         },
-		//-----------------------------------------------------------------
+        //-----------------------------------------------------------------
         // FPLE Scene camera (read only)
-		//-----------------------------------------------------------------
+        //-----------------------------------------------------------------
         camera: {
             get: function() {
                 return this._camera;
@@ -894,7 +996,7 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     // Creates the display-related objects
     //-----------------------------------------------------------------------
-	var aliasCreateDisplayObjects = Scene_Map.prototype.createDisplayObjects;
+    var aliasCreateDisplayObjects = Scene_Map.prototype.createDisplayObjects;
     Scene_Map.prototype.createDisplayObjects = function() {
         aliasCreateDisplayObjects.apply(this, arguments);
         if (this.useFPLE())
@@ -903,7 +1005,7 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     // Creates the scene's spriteset. Changed to not display the map
     //-----------------------------------------------------------------------
-	var aliasCreateSpriteset = Scene_Map.prototype.createSpriteset;
+    var aliasCreateSpriteset = Scene_Map.prototype.createSpriteset;
     Scene_Map.prototype.createSpriteset = function() {
         if (this.useFPLE()) {
             this._spriteset = new Spriteset_Base();
@@ -924,7 +1026,7 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     // Checks if the scene is ready to go.
     //-----------------------------------------------------------------------
-	var aliasIsReady = Scene_Map.prototype.isReady;
+    var aliasIsReady = Scene_Map.prototype.isReady;
     Scene_Map.prototype.isReady = function() {
         if (this._fple)
             return aliasIsReady.apply(this, arguments) && this._fple.isReady();
@@ -934,7 +1036,7 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     // Updates the scene's main objects
     //-----------------------------------------------------------------------
-	var aliasUpdateMain = Scene_Map.prototype.updateMain;
+    var aliasUpdateMain = Scene_Map.prototype.updateMain;
     Scene_Map.prototype.updateMain = function() {
         aliasUpdateMain.apply(this, arguments);
         if (this.useFPLE())
@@ -950,26 +1052,26 @@ var $babylon, $fple;
     // Starts an encounter.
     // This avoids errors when battle starts.
     //-----------------------------------------------------------------------
-	var aliasStartEncounterEffect = Scene_Map.prototype.startEncounterEffect;
+    var aliasStartEncounterEffect = Scene_Map.prototype.startEncounterEffect;
     Scene_Map.prototype.startEncounterEffect = function() {
-		if (this.useFPLE())
-			this._encounterEffectDuration = this.encounterEffectSpeed();
-		else
-			aliasStartEncounterEffect.apply(this, arguments);
+        if (this.useFPLE())
+            this._encounterEffectDuration = this.encounterEffectSpeed();
+        else
+            aliasStartEncounterEffect.apply(this, arguments);
     };
     //-----------------------------------------------------------------------
     // Stops the scene process
     //-----------------------------------------------------------------------
-	var aliasStop = Scene_Map.prototype.stop;
+    var aliasStop = Scene_Map.prototype.stop;
     Scene_Map.prototype.stop = function() {
         if (this.useFPLE())
             this._fple.terminate();
         $fple = null;
         aliasStop.apply(this, arguments);
     };
-	//-----------------------------------------------------------------------
-	// Checks whether to use FPLE on the current map
-	//-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    // Checks whether to use FPLE on the current map
+    //-----------------------------------------------------------------------
     Scene_Map.prototype.useFPLE = function() {
         return !!$dataMap.meta.fple;
     };
@@ -993,7 +1095,7 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     Graphics._createFPLERenderer = function() {
         // Adds the fple canvas to the document body
-		// Using GameCanvas would cause problem with PIXI
+        // Using GameCanvas would cause problem with PIXI
         if (!this._fpleCanvas) {
             this._fpleCanvas = document.createElement('canvas');
             this._fpleCanvas.id = "FPLECanvas";
@@ -1010,7 +1112,7 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     // Updates all graphical elements
     //-----------------------------------------------------------------------
-	var aliasUpdateAll = Graphics._updateAllElements;
+    var aliasUpdateAll = Graphics._updateAllElements;
     Graphics._updateAllElements = function() {
         aliasUpdateAll.apply(this, arguments);
         this._updateFPLE();
@@ -1021,8 +1123,8 @@ var $babylon, $fple;
     Graphics._updateFPLE = function() {
         if (!this._fpleCanvas) return;
         this._fpleCanvas.width = this._width;
-		this._fpleCanvas.height = this._height;
-		this._centerElement(this._fpleCanvas);
+        this._fpleCanvas.height = this._height;
+        this._centerElement(this._fpleCanvas);
     };
     //-----------------------------------------------------------------------
     // Terminates FPLE rendering process.
@@ -1035,24 +1137,24 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     Graphics._createRenderer = function() {
         PIXI.dontSayHello = true;
-		var width = this._width;
-		var height = this._height;
-		var options = { view: this._canvas, transparent: true };
-		try {
-			switch (this._rendererType) {
-			case 'canvas':
-				this._renderer = new PIXI.CanvasRenderer(width, height, options);
-				break;
-			case 'webgl':
-				this._renderer = new PIXI.WebGLRenderer(width, height, options);
-				break;
-			default:
-				this._renderer = PIXI.autoDetectRenderer(width, height, options);
-				break;
-			}
-		} catch (e) {
-			this._renderer = null;
-		}
+        var width = this._width;
+        var height = this._height;
+        var options = { view: this._canvas, transparent: true };
+        try {
+            switch (this._rendererType) {
+            case 'canvas':
+                this._renderer = new PIXI.CanvasRenderer(width, height, options);
+                break;
+            case 'webgl':
+                this._renderer = new PIXI.WebGLRenderer(width, height, options);
+                break;
+            default:
+                this._renderer = PIXI.autoDetectRenderer(width, height, options);
+                break;
+            }
+        } catch (e) {
+            this._renderer = null;
+        }
     };
     //-----------------------------------------------------------------------
     // Renders the stage to the game screen.
@@ -1084,16 +1186,16 @@ var $babylon, $fple;
 // Plugin commands
 //=============================================================================
 (function() {
-	//-----------------------------------------------------------------------
-	// Plugin command function
-	//-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    // Plugin command function
+    //-----------------------------------------------------------------------
     var aliasPluginCommand = Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function(command, args) {
         aliasPluginCommand.apply(this, arguments);
         if (command == 'FPLE') {
             var match;
-			
-			// Resolution change
+            
+            // Resolution change
             if (args[0] == 'setResolution') {
                 if (args[1]) {
                     if (match = args[1].match(/v\[(\d+)\]/i)) {
@@ -1106,7 +1208,7 @@ var $babylon, $fple;
                     console.error('FPLE: PluginCommand: no resolution specified.');
                 }
 
-			// View distance change
+            // View distance change
             } else if (args[0] == 'setViewDistance') {
                 if (args[1]) {
                     if (match = args[1].match(/v\[(\d+)\]/i)) {
@@ -1115,6 +1217,21 @@ var $babylon, $fple;
                     }
 
                     MBS.FPLE.viewRadius = Number(args[1]);
+                } else {
+                    console.error('FPLE: PluginCommand: no view distance specified.');
+                }
+
+            // Light color change
+            } else if (args[0] == 'setLightColor') {
+                if (args[1]) {
+                    if (match = args[1].match(/v\[(\d+)\]/i)) {
+                        args[1] = args[1].replace(match[0], 
+                            $gameVariables.value(String(match[1])));
+                    }
+
+                    MBS.FPLE.lightColor = args[1][0] == '#' ? args[1] : '#' + args[1];
+                    if (!!$fple)
+                        $fple.refreshLight();
                 } else {
                     console.error('FPLE: PluginCommand: no view distance specified.');
                 }
