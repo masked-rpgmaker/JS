@@ -1,7 +1,7 @@
 /**
  *  @file    MBS - FPLE MV
  *  @author  Masked
- *  @version 1.4.0 2017-01-02
+ *  @version 1.5.0 2017-01-09
  */
 /*:
  *  @plugindesc This plugin makes your game a first person labyrinth explorer.
@@ -106,7 +106,26 @@
  *  To activate FPLE on your map, just add "<fple>" (without quotes) to its notes.
  *  This is case sensitive! <FPLE> will not work.
  *
- *  5. Plugin commands
+ *  5. Events
+ *
+ *  There are two kinds of events in FPLE: sprite events and wall events.
+ *  
+ *  Sprite events are the ones you'll use for characters, vehicles, or whatever
+ *  can be seen from different directions. This kind of event will change 
+ *  direction along with the camera, so that they're always pointing the same
+ *  direction relative to the game "world".
+ *  There's no special preparation needed to create a sprite event, these are
+ *  default. Just place the event on the map as you would normally and you're 
+ *  ready to go.
+ *
+ *  Sprite events aren't as good for stuff like moving walls or doors, though.
+ *  For those, you'll want to use wall events. Wall events, as the name says,
+ *  behave just like they were normal walls. That means their graphics will
+ *  be the same no matter from what angle they're being seen. To create a wall
+ *  event, you just have to put <wall> on its notes (the textbox right next to
+ *  its name).
+ * 
+ *  6. Plugin commands
  * 
  *  FPLE setResolution <x | v[n]>    : Sets the FPLE canvas resolution (higher 
  *                                     is better)
@@ -134,131 +153,6 @@
  *  - Masked, for creating;
  *  - babylon.js team (https://github.com/BabylonJS/Babylon.js/graphs/contributors), 
  *    for their aweasomer library.
- */
- /*:pt
- *  @plugindesc Esse plugin transforma seu jogo em um explorador de labirinto em primeira pessoa.
- *
- *  @author Masked
- *
- *  @param View Distance
- *  @desc Número de tiles à frente que o jogador vê por padrão.
- *  @default 3
- *
- *  @param Field Of View
- *  @desc Ângulo visível com a câmera
- *  @default 75
- *
- *  @param Light Color
- *  @desc Código hexadecimal da cor da luz do jogador.
- *  @default #ffffff
- *  
- *  @param Wall Terrain
- *  @desc ID do terreno usado para identificar paredes nos tilesets.
- *  @default 1
- *  
- *  @param Ceiling Region
- *  @desc ID da região usada em tiles com teto no mapa.
- *  @default 0
- *  
- *  @param 3D Anaglyph
- *  @desc Quando usar ou não um efeito de vermelho e ciano para dar profundidade ao jogo. 1 = SIM, 0 = NÃO.
- *  @default 0
- *  
- *  @param Texture Filter
- *  @desc Filtro usado nas texturas. (nearest/linear)
- *  @default linear
- *  
- *  @param Texture Format
- *  @desc Formato dos arquivos de textura. (png/jpg/dds/gif/...)
- *  @default png
- *  
- *  @param Texture Anisotropy
- *  @desc Número de amostras tiradas das texturas. (geralmente uma potência de 2)
- *  @default 1
- *  
- *  @param Antialiasing
- *  @desc Quando usar antialiasing ou não (alto custo de performance). 1 = SIM, 0 = NÃO.
- *  @default 0
- *  
- *  @param Optimization Level
- *  @desc Nível de otimização da cena aplicado (degradante). (none/low/medium/high)
- *  @default none
- *  
- *  @help 
- *  #
- *                       First Person Labyrinth Explorer
- *                                  por Masked
- *
- *  Esse plugin constrói um cenário 3D para o seu jogo a partir de mapas simples,
- *  tornando-o um explorador de labirinto em primeira pessoa.
- *
- *
- *                                  Como Usar
- *
- *  1. Instalação
- *
- *  Eu recomendo fortemente que use a DEMO do FPLE como base para seu projeto,
- *  se estiver usando-a, pule esta parte.
- *  Caso você queira criar seu projeto do zero, no entanto, é necessário baixar
- *  o babylon.js de http://cdn.babylonjs.com/2-3/babylon.js e salvá-lo na pasta
- *  "js/libs" do seu jogo. Esse plugin foi feito e testado usando a versão r74,
- *  por isso é recomendado usar esta versão para evitar problemas.
- *  Depois, edite o index.html do seu jogo e adicione isso após a linha 14:
- *  <script type="text/javascript" src="js/libs/babylon.js"></script>
- *  Pronto, plugin instalado, agora estamos meio passo mais próximos do final :D
- *
- *  2. Texturas
- *
- *  Texturas são definidas criando arquivos com nomes seguindo o padrão 
- *  "{tileset}_{linha}-{coluna}", substituindo '{tileset}' pelo ID do tileset do
- *  FPLE no database e '{linha}' e '{coluna}' com, respectivamente, o número da 
- *  linha e coluna do tile correspondente à textura no tileset. Note que apenas
- *  tiles A5 podem ser usados no momento.
- *  Arquivos de textura devem estar na pasta "img/textures" do seu projeto.
- *  Não há valor mínimo ou máximo para o tamanho das texturas, mas recomenda-se
- *  usar texturas quadradas e com tamanhos que sejam potências de 2. É importante
- *  perceber que usar texturas maiores pode causar lag, especialmente em 
- *  computadores antigos.
- *
- *  3. Tilesets
- * 
- *  Configurar tilesets no FPLE é bem simples: primeiro, crie um tileset com
- *  apenas a camada A5. Então, configure a passabilidade normalmente e marque tiles
- *  de paede com o terreno que você escolheu nas configurações do plugin.
- *  Note que o primeiro tile da primeira coluna é sempre invisível, então é 
- *  recomendado deixar isso sinalizado no próprio tileset.
- *  
- *  4. Mapeamento
- *  
- *  O mapeamento não muda muito, na verdade, a única alteração é que tiles sem
- *  textura, vazios ou o primeiro tile da primeira linha do tileset são 
- *  transparentes e ficam parecendo buracos no jogo, e você pode configurar como
- *  o teto aparece mudando a região dos tiles. Se a região de teto for 0, então
- *  todos os tiles sem região terão um teto.
- *  Não se esqueça de ativar o FPLE no mapa colocando "<fple>" (sem aspas) nas notas dele.
- *
- *  5. Comandos de pugin
- * 
- *  FPLE setResolution <x | v[n]>    : Define a resolução do canvas do FPLE
- *                                     (quanto maior, melhor)
- *  FPLE setViewDistance <x | v[n]>  : Define o raio de visão do jogador
- *  FPLE setLightColor <x | v[n]>    : Define a cor da luz do FPLE
- *
- *  Exemplos:
- *  FPLE setResolution 0.5           : Define a resolução como metade do normal
- *  FPLE setResolution v[42]         : Define a resolução como o valor da
- *                                     variável número 42
- *
- *  FPLE setViewDistance 3           : Define o raio de visão como 3 tiles
- *  FPLE setViewDistance v[42]       : Define o raio de visão como o valor da
- *                                     variável número 42
- *
- *
- *                                   Créditos
- *
- *  - Masked, por criar;
- *  - Equipe do babylon.js (https://github.com/BabylonJS/Babylon.js/graphs/contributors), 
- *    pela biblioteca mais lindona.
  */
 
 "use strict";
@@ -481,7 +375,6 @@ var $babylon, $fple;
         material.diffuseTexture = texture.clone();
         material.diffuseTexture.hasAlpha = true;
         material.specularColor = new BABYLON.Color3(0, 0, 0);
-        material.freeze();
 
         return material;
     };
@@ -492,8 +385,8 @@ var $babylon, $fple;
     //-----------------------------------------------------------------------
     MBS.FPLE.Map.prototype.toScene = function(scene) {
         this._applySkybox(scene);
-        this._applyTiles(scene);
         this._applyEvents(scene);
+        this._applyTiles(scene);
     };
     //-----------------------------------------------------------------------
     // Creates a cube to add into a FPLE scene
@@ -543,7 +436,6 @@ var $babylon, $fple;
             scene
         );
         skyboxMaterial.emissiveTexture.coordinatesMode = BABYLON.Texture.PROJECTION_MODE;
-        skyboxMaterial.freeze();
         this._skybox.material = skyboxMaterial;
     };
     //-----------------------------------------------------------------------
@@ -637,31 +529,64 @@ var $babylon, $fple;
             var charName = event.characterName();
             if (!charName) return;
 
-            var manager;
-            if (!this._managers[charName]) {
+            var filename = "img/characters/" + encodeURIComponent(charName) + ".png";
 
-                var img = ImageManager.loadCharacter(charName, 0);
-                img.addLoadListener(function() {
-                    manager = new BABYLON.SpriteManager(
-                        "ev_" + charName,
-                        "img/characters/" + encodeURIComponent(charName) + ".png",
-                        256,
-                        new BABYLON.Size(img.width / 12, img.height / 8),
-                        scene
-                    );
-                    this._managers[charName] = manager;
+            if (event.event().note.match(/<wall>/i))
+            {
+                var cube = this._createCube("event" + event.id, scene);
+                cube.position = new BABYLON.Vector3(-event._realX, MBS.FPLE.cameraHeight, event._realY);
+
+                var texture = new BABYLON.Texture(filename, scene);
+                if (!ImageManager.isObjectCharacter(event.characterName()))
+                {
+                    texture.uScale = 1 / 12.0;
+                    texture.vScale = 1 / 8.0;
+                }
+                else
+                {
+                    texture.uScale = 1 / 3.0;
+                    texture.vScale = 1 / 4.0;
+                }
+
+                var material = new BABYLON.StandardMaterial("event" + event.id, scene);
+                material.diffuseColor = new BABYLON.Color3(1, 1, 1);
+                material.diffuseTexture = texture;
+                material.diffuseTexture.hasAlpha = true;
+                material.specularColor = new BABYLON.Color3(0, 0, 0);
+
+                cube.material = material;
+
+                cube._event = event;
+
+                this._events.push(cube);
+            }
+            else
+            {
+                var manager;
+                if (!this._managers[charName]) {
+                    var img = ImageManager.loadCharacter(charName, 0);
+                    img.addLoadListener(function() {
+                        manager = new BABYLON.SpriteManager(
+                            "ev_" + charName,
+                            filename,
+                            256,
+                            new BABYLON.Size(img.width / 12.0, img.height / 8.0),
+                            scene
+                        );
+                        this._managers[charName] = manager;
+
+                        var sprite = new BABYLON.Sprite("event" + event.id, manager);
+                        sprite._event = event;
+                        this._events.push(sprite);
+                    }.bind(this));
+                } else {
+                    manager = this._managers[charName];
 
                     var sprite = new BABYLON.Sprite("event" + event.id, manager);
                     sprite._event = event;
                     this._events.push(sprite);
-                }.bind(this));
-            } else {
-                manager = this._managers[charName];
-
-                var sprite = new BABYLON.Sprite("event" + event.id, manager);
-                sprite._event = event;
-                this._events.push(sprite);
-            }            
+                }
+            }    
         }.bind(this));
     };
     //-----------------------------------------------------------------------
@@ -673,38 +598,48 @@ var $babylon, $fple;
         
         var vr2 = MBS.FPLE.viewRadius * MBS.FPLE.viewRadius;
 
+        var row = 48;
+        var col = 3;
+
+        var disposed = [];
+
         this._events.forEach(function (eventObject) {
             var event = eventObject._event;
+
+            if (event._erased)
+            {
+                eventObject.dispose(true, true);
+                disposed.push(eventObject);
+                return;
+            }
+
             var charIndex = event.characterIndex();
 
             var direction, offset;
             if (!ImageManager.isObjectCharacter(event.characterName())) {
-                var row = 48;
-                var col = 3;
                 offset = row * Math.floor(charIndex / 4) + (charIndex % 4) * col;
 
-                var eventAngle = ([180, 270, 90, 0])[event._direction / 2 - 1];
-                
-                var relativeAngle = playerAngle - eventAngle;
-
-                relativeAngle %= 360;
-                while (relativeAngle < 0)
-                    relativeAngle += 360;
-
-                var angles = [180, 90, 270, 0];
-                var closest = angles[0];
-                for (var i = 0; i < angles.length; i++)
-                    if (Math.abs(relativeAngle - angles[i]) < Math.abs(relativeAngle - closest))
-                        closest = angles[i];
-
-                var relativeDirection = angles.indexOf(closest) * 2 + 2;
-                direction = (relativeDirection / 2 - 1) % 4 * col * 4;
-
-                var d2 = BABYLON.Vector3.DistanceSquared(eventObject.position, playerPosition);
-                if (d2 >= vr2)
-                    eventObject.color = new BABYLON.Color4(0, 0, 0, 1);
+                if (event.isDirectionFixed() || event.event().note.match(/<wall>/i))
+                    direction = (event._direction / 2 - 1) % 4 * col * 4;
                 else
-                    eventObject.color = new BABYLON.Color4.FromHexString(MBS.FPLE.lightColor + 'ff');
+                {
+                    var eventAngle = ([180, 270, 90, 0])[event._direction / 2 - 1];
+                    
+                    var relativeAngle = playerAngle - eventAngle;
+
+                    relativeAngle %= 360;
+                    while (relativeAngle < 0)
+                        relativeAngle += 360;
+
+                    var angles = [180, 90, 270, 0];
+                    var closest = angles[0];
+                    for (var i = 0; i < angles.length; i++)
+                        if (Math.abs(relativeAngle - angles[i]) < Math.abs(relativeAngle - closest))
+                            closest = angles[i];
+
+                    var relativeDirection = angles.indexOf(closest) * 2 + 2;
+                    direction = (relativeDirection / 2 - 1) % 4 * col * 4;
+                }
             }
             else
             {
@@ -712,9 +647,31 @@ var $babylon, $fple;
                 direction = (event._direction / 2 - 1) % 4 * 3;
             }
 
-            eventObject.cellIndex = offset + direction + ([0, 1, 2, 1])[event._pattern % 4];
+            if (!event.event().note.match(/<wall>/i))
+            {
+                var d2 = BABYLON.Vector3.DistanceSquared(eventObject.position, playerPosition);
+                if (d2 >= vr2)
+                    eventObject.color = new BABYLON.Color4(0, 0, 0, 1);
+                else
+                    eventObject.color = new BABYLON.Color4.FromHexString(MBS.FPLE.lightColor + 'ff');
+
+                eventObject.cellIndex = offset + direction + ([0, 1, 2, 1])[event._pattern % 4];
+            }
+            else
+            {
+                var cellRow = Math.floor((offset + direction + ([0, 1, 2, 1])[event._pattern % 4]) / 12);
+                var cellCol = (offset + direction + ([0, 1, 2, 1])[event._pattern % 4]) % 12;
+
+                eventObject.material.diffuseTexture.uOffset = cellCol / 12.0;
+                eventObject.material.diffuseTexture.vOffset = 1 - (1 + cellRow) / 8.0;
+            }
+
             eventObject.position = new BABYLON.Vector3(-event._realX, MBS.FPLE.cameraHeight, event._realY);
         });
+
+        disposed.forEach(function (disposed) {
+            this._events.splice(this._events.indexOf(disposed), 1);
+        }.bind(this));
     };
 })();
 //=============================================================================
